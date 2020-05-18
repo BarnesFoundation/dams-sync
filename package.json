@@ -1,0 +1,25 @@
+{
+	"name": "dams-sync",
+	"version": "1.0.0",
+	"description": "A sync process to copy archival information from TMS to an intermediate database that is then pulled from by the DAMS",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"watch": "tsc -w",
+		"start": "node dist/app.js"
+	},
+	"author": "Christopher D Jativa",
+	"license": "ISC",
+	"devDependencies": {
+		"@types/dotenv": "^8.2.0",
+		"@types/mysql": "^2.15.11",
+		"@types/node": "^14.0.1",
+		"@types/pg": "^7.14.3",
+		"typescript": "^3.9.2"
+	},
+	"dependencies": {
+		"dotenv": "^8.2.0",
+		"mssql": "^6.2.0",
+		"pg": "^8.2.1"
+	}
+}
