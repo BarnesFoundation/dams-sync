@@ -1,5 +1,6 @@
 import { Config } from './config';
-import { SQLConnection } from './sql';
+import { SQLConnection } from './classes/sql';
+import { MainSyncProcess } from './classes/mainSyncProcess';
 
 let tmsCon: SQLConnection;
 let netxCon: SQLConnection;
@@ -10,7 +11,8 @@ const main = async () => {
 	await initializeDatabaseConnections();
 
 	// Run the main processes of the sync
-	await executeSyncProcess();
+	const mainSync = new MainSyncProcess(tmsCon, netxCon);
+	await mainSync.run();
 
 	// Now that we're done, close connections
 	await closeDatabaseConnections();
@@ -48,24 +50,6 @@ const closeDatabaseConnections = async () => {
 	await netxCon.endConnection();
 };
 
-/** Runs the main process tasks in the sync */
-const executeSyncProcess = async () => {
 
-	// Get the total count of objects
-	const totalObjectCount = await getCollectionCount();
-};
-
-/** Retrieves the total count of Collection Online objects in TMS */
-const getCollectionCount = async (): Promise<number> => {
-
-	// Query to get count of objects we'll end up working with
-	const countQuery = `SELECT COUNT(TextEntry) FROM TextEntries WHERE TextTypeId = 67`;
-
-	// From knowledge of the database - we have around 7622 objects we will work with - get the exact count to make sure
-	const { recordset } = await tmsCon.executeQuery(countQuery);
-	const count = recordset[0][''] as number;
-
-	return count;
-};
 
 main();
