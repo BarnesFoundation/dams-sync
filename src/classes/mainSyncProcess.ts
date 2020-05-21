@@ -14,7 +14,6 @@ export class MainSyncProcess {
 		this.netxCon = netxCon;
 	}
 
-
 	/** Retrieves the total count of Collection Online objects in TMS */
 	private async getCollectionObjectIDs(): Promise<CollectionObjectIDs> {
 
@@ -68,9 +67,8 @@ export class MainSyncProcess {
 		};
 
 		const createObjectConstituentTable = async () => {
-			const { objectConstituentMappings, mainObjectInformation, constituentRecords } = NetXTables;
+			const { objectConstituentMappings, constituentRecords } = NetXTables;
 
-			const mainObjectInformationName = mainObjectInformation.tableName;
 			const constituentRecordsName = constituentRecords.tableName;
 			const constituentRecordsPrimaryColumn = constituentRecords.primaryKeyColumns[0];
 
@@ -90,7 +88,7 @@ export class MainSyncProcess {
 					ON DELETE NO ACTION
 			);
 			`;
-			
+
 			await this.netxCon.executeQuery(query);
 		};
 
