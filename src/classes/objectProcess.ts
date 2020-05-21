@@ -25,7 +25,7 @@ export class ObjectProcess {
 		// Execute the query
 		const recordset = (await this.tmsCon.executeQuery(collectionPayloadQuery)).recordset as CollectionPayloadTextEntry[];
 
-		// Get the text entry - which is a JSON string and parse it
+		// Get the text entry - which is a JSON string and parse it	
 		const cpTextEntry = recordset[0].TextEntry;
 		const cp = JSON.parse(cpTextEntry) as CollectionPayload;
 
@@ -39,7 +39,11 @@ export class ObjectProcess {
 	}
 
 	private async addObjectToNetX(or: ObjectRecord) {
+
+		// Get the keys -- i.e. column names, and values for this object
 		for (let [key, value] of Object.entries(or)) {
+
+			
 			console.log(`${key} has a type of ${typeof value}`);
 		}
 	}

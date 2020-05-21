@@ -32,6 +32,7 @@ export class SQLConnection {
 		this.database = database;
 	}
 
+	/** Connects to the database  */
 	public async connect() {
 
 		try {
@@ -65,6 +66,13 @@ export class SQLConnection {
 		}
 	}
 
+	/** Executes the query for the database
+	 * @params query - The query to run. 
+	 * 	For an MSSQL connection, query can be concatenated string per docs https://www.npmjs.com/package/mssql#es6-tagged-template-literals
+	 * 	For a PSQL connection, query must be parameterized query https://node-postgres.com/features/queries#Parameterized%20query
+	 * 
+	 * @params values - The values to be substitued into the query string. Only for use with PSQL connection
+	 */
 	public async executeQuery(query: string, values?: string[] | number[]) {
 
 		let results;
