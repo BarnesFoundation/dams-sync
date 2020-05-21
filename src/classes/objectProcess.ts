@@ -1,14 +1,15 @@
 import { ObjectID, CollectionPayloadTextEntry, CollectionPayload, ObjectRecord } from '../interfaces/queryResponses';
 import { SQLConnection } from './sql';
 import { NetXTables } from '../constants/netXDatabase';
+import { TableInformation } from '../interfaces/netXDatabaseInterfaces';
 
 const OBJECT_RECORD = 'objectRecord';
 const CONSTITUENT_RECORD = 'ConstituentRecord';
 
-const getTableNameForFieldName = (fieldName: string): string => {
+const getTableForName = (fieldName: string): TableInformation => {
 
-	if (fieldName === OBJECT_RECORD) return NetXTables.mainObjectInformation.tableName;
-	if (fieldName === CONSTITUENT_RECORD) return NetXTables.constituentRecords.tableName;
+	if (fieldName === OBJECT_RECORD) return NetXTables.mainObjectInformation;
+	if (fieldName === CONSTITUENT_RECORD) return NetXTables.constituentRecords;
 };
 
 const getDatabaseTypeForField = (fieldType: string) => {
@@ -58,60 +59,44 @@ export class ObjectProcess {
 
 	private async addObjectRecordToNetX(or: ObjectRecord) {
 
-		const tableName = getTableNameForFieldName(OBJECT_RECORD);
+		const destinationTable = getTableForName(OBJECT_RECORD);
 		const columnNamesToInsert = [];
 		const valuesToInsert = [];
 
 		// Get the keys -- i.e. column names, and values for this object
 		for (let [fieldName, fieldValue] of Object.entries(or)) {
 
-			// The Constituent Record field is the only non-primitive field we have so it gets handle differently
-			if (fieldName === CONSTITUENT_RECORD) {
+			// We only want to add this field if it's defined in the columns we need for the table
+			const fieldIsNeededColumn = destinationTable.columns.some((column) => column.name === fieldName);
+			if (fieldIsNeededColumn) {
 
-			}
-
-			// Other fields get added to this table and built into this row
-			else {
-
-				// Ensure this field name gets added to object table as a column
-				await this.addFieldAsColumnIfNotExists(fieldName, fieldValue, tableName);
-
-				columnNamesToInsert.push(fieldName);
-				valuesToInsert.push(fieldValue);
+				//  Fields get added to this table and built into this row -- except Constituent Record field
+				// which is the only non-primitive field we have so it gets handle differently later
+				if (fieldName !== CONSTITUENT_RECORD) {
+					columnNamesToInsert.push(`"${fieldName}"`);
+					valuesToInsert.push(fieldValue);
+				}
 			}
 		}
 
 		// Once we've gone through all the field names - we can build our insert query
-		const columnString = buildColumnString(columnNamesToInsert);
-		const valuesPlaceholder = valuesToInsert.map((_, index) => `${index + 1}`).join();
+		const columnString = columnNamesToInsert.join();
+		const valuesPlaceholder = valuesToInsert.map((_, index) => `$${index + 1}`).join();
 
 		// Build our query for this row
 		const query = `
-		INSERT INTO ${tableName} (${columnString})
+		INSERT INTO ${destinationTable.tableName} (${columnString})
 		VALUES (${valuesPlaceholder})
 		`;
 
-		console.log(query);
+		// Execute the query to insert the object row row
+		await this.netxCon.executeQuery(query, valuesToInsert);
+
+		// If the Constituent Record list exists, let's handle it
+		if ()
 	}
 
-	private async addFieldAsColumnIfNotExists(fieldName: string, fieldValue: string | number, tableName: string) {
-
-		const fieldType = typeof fieldValue;
-		const columnType = getDatabaseTypeForField(fieldType);
-
-		const query = `
-		ALTER TABLE ${tableName}
-		ADD COLUMN IF NOT EXISTS "${fieldName}" ${columnType}
-		`;
-
-		await this.netxCon.executeQuery(query);
-	}
-
-	private async addConstituentRecordToNetX(constituentRecord) {
+	private async addConstituentRecordToNetX(constituentRecords) {
 
 	}
 }
-
-const buildColumnString = (columnNames: string[]): string => {
-	return columnNames.join();
-};

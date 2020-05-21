@@ -6,11 +6,12 @@ export interface TablesInformation {
 
 export interface TableInformation {
 	tableName: string,
-	primaryKeyColumns?: ColumnInformation[],
-	foreignKeyColumns?: ColumnInformation[]
+	columns: ColumnInformation[],
 }
 
 interface ColumnInformation {
 	name: string,
-	type: 'VARCHAR' | 'INTEGER'
+	type: 'VARCHAR' | 'INTEGER',
+	primary?: true,
+	foreign?: true
 }

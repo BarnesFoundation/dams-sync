@@ -1,5 +1,4 @@
 import { ObjectID } from '../interfaces/queryResponses';
-import { TableInformation } from '../interfaces/netXDatabaseInterfaces';
 import { SQLConnection } from './sql';
 import { ObjectProcess } from './objectProcess';
 import { NetXTables } from '../constants/netXDatabase';
@@ -36,15 +35,17 @@ export class MainSyncProcess {
 		const createMainObjectTable = async () => {
 
 			const { mainObjectInformation } = NetXTables;
-			const primaryColumn1 = mainObjectInformation.primaryKeyColumns[0];
-			const primaryColumn2 = mainObjectInformation.primaryKeyColumns[1];
+			const primaryColumn1 = mainObjectInformation.columns[0];
+			const primaryColumn2 = mainObjectInformation.columns[1];
+
+			const columnsString = mainObjectInformation.columns.map((column, index, array) => `"${column.name}" ${column.type}`)
+				.join(',\n');
 
 			// Query to create table
 			const query = `
 			CREATE TABLE IF NOT EXISTS ${mainObjectInformation.tableName} (
-				"${primaryColumn1.name}" ${primaryColumn1.type},
-				"${primaryColumn2.name}" ${primaryColumn2.type},
-				PRIMARY KEY ("${primaryColumn1.name}", "${primaryColumn2.name}")
+				${columnsString},
+				PRIMARY KEY ("${primaryColumn1.name}", "${primaryColumn2.name}" )
 			);
 			`;
 
@@ -54,7 +55,7 @@ export class MainSyncProcess {
 		const createConstituentTable = async () => {
 
 			const { constituentRecords } = NetXTables;
-			const primaryColumn = constituentRecords.primaryKeyColumns[0];
+			const primaryColumn = constituentRecords.columns[0];
 
 			// Query to create table
 			const query = `
@@ -70,20 +71,20 @@ export class MainSyncProcess {
 			const { objectConstituentMappings, constituentRecords } = NetXTables;
 
 			const constituentRecordsName = constituentRecords.tableName;
-			const constituentRecordsPrimaryColumn = constituentRecords.primaryKeyColumns[0];
+			const constituentRecordsPrimaryColumn = constituentRecords.columns[0];
 
-			const primaryColumn = objectConstituentMappings.primaryKeyColumns[0];
-			const foreignColumn1 = objectConstituentMappings.foreignKeyColumns[0];
-			const foreignColumn2 = objectConstituentMappings.foreignKeyColumns[1];
+			const primaryColumn = objectConstituentMappings.columns[0];
+			const foreignColumn = objectConstituentMappings.columns[1];
+			const additionalColumn = objectConstituentMappings.columns[2];
 
 			// Query to create table
 			const query = `
 			CREATE TABLE IF NOT EXISTS ${objectConstituentMappings.tableName} (
 				"${primaryColumn.name}" ${primaryColumn.type} PRIMARY KEY,
-				"${foreignColumn1.name}" ${foreignColumn1.type},
-				"${foreignColumn2.name}" ${foreignColumn2.type},
+				"${foreignColumn.name}" ${foreignColumn.type},
+				"${additionalColumn.name}" ${additionalColumn.type},
 
-				CONSTRAINT ${constituentRecordsName}_id_fkey FOREIGN KEY ("${foreignColumn2.name}")
+				CONSTRAINT ${constituentRecordsName}_id_fkey FOREIGN KEY ("${foreignColumn.name}")
 					REFERENCES ${constituentRecordsName} ("${constituentRecordsPrimaryColumn.name}") MATCH SIMPLE
 					ON DELETE NO ACTION
 			);
