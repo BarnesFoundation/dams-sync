@@ -141,7 +141,7 @@ export class ObjectProcess {
 
 					for (let [key, value] of Object.entries(cr)) {
 						// Check if the current field name is needed in the constituent record object
-						const fieldNameNeededInCR = NetXTables.constituentRecords.columns.some((column) => column.name === fieldName);
+						const fieldNameNeededInCR = NetXTables.constituentRecords.columns.some((column) => column.name === key);
 
 						if (fieldNameNeededInCR) {
 							usableCr[key] = value;
