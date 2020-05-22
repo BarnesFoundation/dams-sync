@@ -36,7 +36,6 @@ export class MainSyncProcess {
 
 			const { mainObjectInformation } = NetXTables;
 			const primaryColumn1 = mainObjectInformation.columns[0];
-			const primaryColumn2 = mainObjectInformation.columns[1];
 
 			const columnsString = mainObjectInformation.columns.map((column, index, array) => `"${column.name}" ${column.type}`)
 				.join(',\n');
@@ -45,7 +44,7 @@ export class MainSyncProcess {
 			const query = `
 			CREATE TABLE IF NOT EXISTS ${mainObjectInformation.tableName} (
 				${columnsString},
-				PRIMARY KEY ("${primaryColumn1.name}", "${primaryColumn2.name}" )
+				PRIMARY KEY ("${primaryColumn1.name}")
 			);
 			`;
 
@@ -97,6 +96,31 @@ export class MainSyncProcess {
 			await this.netxCon.executeQuery(query);
 		};
 
+		const createMediaInformationTable = async () => {
+			const { mainObjectInformation, mediaInformation } = NetXTables;
+
+			const miName = mediaInformation.tableName;
+			const miPrimary = mediaInformation.columns[0];
+			const miForeign = mediaInformation.columns[1];
+
+			const moName = mainObjectInformation.tableName;
+			const moPrimary = mainObjectInformation.columns[0];
+
+			// Query to create table
+			const query = `
+			CREATE TABLE IF NOT EXISTS ${miName} (
+				"${miPrimary.name}" ${miPrimary.type} PRIMARY KEY,
+				"${miForeign.name}" ${miForeign.type},
+
+				CONSTRAINT ${moName}_objectId_fkey FOREIGN KEY ("${miForeign.name}")
+					REFERENCES ${moName} ("${moPrimary.name}") MATCH SIMPLE
+					ON DELETE NO ACTION
+			);
+			`;
+
+			await this.netxCon.executeQuery(query);
+		};
+
 		// Create the NetX main object table
 		await createMainObjectTable();
 
@@ -105,6 +129,9 @@ export class MainSyncProcess {
 
 		// Create the NetX object-constituent mappings table
 		await createObjectConstituentTable();
+
+		// Create the NetX media information table
+		await createMediaInformationTable();
 
 	};
 

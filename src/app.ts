@@ -19,7 +19,7 @@ class Application {
 		// Initialize the intermediate database
 		await mainSync.initializeNetXDatabase();
 
-		await mainSync.run();
+		// await mainSync.run();
 
 		// Now that we're done, close connections
 		await this.closeDatabaseConnections();
