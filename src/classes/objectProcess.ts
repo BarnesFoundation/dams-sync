@@ -76,7 +76,7 @@ export class ObjectProcess {
 
 		// Add the main object record
 		const { query: moQuery, values: moValues } = insertQueryGenerator(mainObjectInformation.tableName, mainInformationObject);
-		// await this.netxCon.executeQuery(moQuery, moValues);
+		await this.netxCon.executeQuery(moQuery, moValues);
 
 		// Add each constituent record
 		for (let i = 0; i < constituentRecordsList.length; i++) {
@@ -84,17 +84,17 @@ export class ObjectProcess {
 
 			// Add the constituent record row
 			const { query: crQuery, values: crValues } = insertQueryGenerator(constituentRecords.tableName, cr);
-			// await this.netxCon.executeQuery(crQuery, crValues);
+			await this.netxCon.executeQuery(crQuery, crValues);
 
 			// Add the mapping between the main object and its constituents
 			const mapping = { constituentRecordId: cr.constituentID, objectId: or.objectId };
 			const { query: mapQuery, values: mapValues } = insertQueryGenerator(objectConstituentMappings.tableName, mapping);
-			// await this.netxCon.executeQuery(mapQuery, mapValues);
+			await this.netxCon.executeQuery(mapQuery, mapValues);
 		}
 
 		// Add media information record
 		const { query: miQuery, values: miValues } = insertQueryGenerator(mediaInformation.tableName, mediaInformationObject);
-		// await this.netxCon.executeQuery(miQuery, miValues);
+		await this.netxCon.executeQuery(miQuery, miValues);
 	}
 
 	/** Takes an object record and parses it into the objects needed by the 

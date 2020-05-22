@@ -15,7 +15,7 @@ export interface TableInformation {
 
 interface ColumnInformation {
 	name: string,
-	type: 'VARCHAR' | 'INTEGER',
+	type: 'VARCHAR' | 'INTEGER' | 'SERIAL',
 	primary?: true,
 	foreign?: true
 }

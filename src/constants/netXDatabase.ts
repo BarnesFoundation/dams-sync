@@ -46,6 +46,7 @@ export const NetXTables: TablesInformation = {
 			{ name: 'birthDate', type: 'VARCHAR' },
 			{ name: 'deathDate', type: 'VARCHAR' },
 			{ name: 'role', type: 'VARCHAR' },
+			{ name: 'artistDisplayDate', type: 'VARCHAR' },
 			{ name: 'artistNationality', type: 'VARCHAR' },
 
 			{ name: 'constituentName', type: 'VARCHAR' },
@@ -60,7 +61,7 @@ export const NetXTables: TablesInformation = {
 	objectConstituentMappings: {
 		tableName: 'object_constituent_mappings',
 		columns: [
-			{ name: 'id', type: 'INTEGER', primary: true },
+			{ name: 'id', type: 'SERIAL', primary: true },
 			{ name: 'constituentRecordId', type: 'INTEGER', foreign: true },
 			{ name: 'objectId', type: 'INTEGER' }
 		]

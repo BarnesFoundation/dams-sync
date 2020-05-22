@@ -106,11 +106,14 @@ export class MainSyncProcess {
 			const moName = mainObjectInformation.tableName;
 			const moPrimary = mainObjectInformation.columns[0];
 
+			const columnsString = mediaInformation.columns.map((column, index, array) => `"${column.name}" ${column.type}`)
+				.join(',\n');
+
 			// Query to create table
 			const query = `
 			CREATE TABLE IF NOT EXISTS ${miName} (
-				"${miPrimary.name}" ${miPrimary.type} PRIMARY KEY,
-				"${miForeign.name}" ${miForeign.type},
+				${columnsString},
+				PRIMARY KEY ("${miPrimary.name}"),
 
 				CONSTRAINT ${moName}_objectId_fkey FOREIGN KEY ("${miForeign.name}")
 					REFERENCES ${moName} ("${moPrimary.name}") MATCH SIMPLE
