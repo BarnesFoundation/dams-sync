@@ -57,10 +57,14 @@ export class MainSyncProcess {
 			const { constituentRecords } = NetXTables;
 			const primaryColumn = constituentRecords.columns[0];
 
+			const columnsString = constituentRecords.columns.map((column, index, array) => `"${column.name}" ${column.type}`)
+				.join(',\n');
+
 			// Query to create table
 			const query = `
 			CREATE TABLE IF NOT EXISTS ${constituentRecords.tableName} (
-				"${primaryColumn.name}" ${primaryColumn.type} PRIMARY KEY
+				${columnsString},
+				PRIMARY KEY ("${primaryColumn.name}")
 			);
 			`;
 

@@ -1,22 +1,32 @@
 import { ObjectID, CollectionPayloadTextEntry, CollectionPayload, ObjectRecord } from '../interfaces/queryResponses';
 import { SQLConnection } from './sql';
 import { NetXTables } from '../constants/netXDatabase';
-import { TableInformation } from '../interfaces/netXDatabaseInterfaces';
 
 const OBJECT_RECORD = 'objectRecord';
 const CONSTITUENT_RECORD = 'ConstituentRecord';
 
-const getTableForName = (fieldName: string): TableInformation => {
+const insertQueryGenerator = (tableName: string, object: { [key: string]: any }) => {
 
-	if (fieldName === OBJECT_RECORD) return NetXTables.mainObjectInformation;
-	if (fieldName === CONSTITUENT_RECORD) return NetXTables.constituentRecords;
-};
+	const columnNamesToInsert = [];
+	const values = [];
 
-const getDatabaseTypeForField = (fieldType: string) => {
+	for (let [fieldName, fieldValue] of Object.entries(object)) {
+		columnNamesToInsert.push(`"${fieldName}"`);
+		values.push(fieldValue);
+	}
 
-	if (fieldType === 'boolean') return 'BOOLEAN';
-	if (fieldType === 'string') return 'VARCHAR';
-	if (fieldType === 'number') return 'INTEGER;'
+	// Once we've gone through all the field names - we can build our insert query
+	const columnString = columnNamesToInsert.join();
+	const valuesPlaceholder = values.map((_, index) => `$${index + 1}`).join();
+
+	// Build our query for this row
+	const query = `
+	INSERT INTO ${tableName} (${columnString})
+	VALUES (${valuesPlaceholder})
+	ON CONFLICT DO NOTHING
+	`;
+
+	return { query, values };
 };
 
 
@@ -32,6 +42,7 @@ export class ObjectProcess {
 		this.netxCon = netxCon;
 	}
 
+	/** Handles performing the main process to parsing and adding an object to the NetX database */
 	public async perform() {
 
 		// Query to get the Online Collection Payload for this object id
@@ -57,46 +68,141 @@ export class ObjectProcess {
 		}
 	}
 
+	/** Performs the necessary functions in order to prepate and add an object to NetX database */
 	private async addObjectRecordToNetX(or: ObjectRecord) {
 
-		const destinationTable = getTableForName(OBJECT_RECORD);
-		const columnNamesToInsert = [];
-		const valuesToInsert = [];
+		const { mainObjectInformation, mediaInformation, constituentRecords, objectConstituentMappings } = NetXTables;
+		const { mainInformationObject, mediaInformationObject, constituentRecordsList } = this.createObjectsForTables(or);
 
-		// Get the keys -- i.e. column names, and values for this object
+		// Add the main object record
+		const { query: moQuery, values: moValues } = insertQueryGenerator(mainObjectInformation.tableName, mainInformationObject);
+		// await this.netxCon.executeQuery(moQuery, moValues);
+
+		// Add each constituent record
+		for (let i = 0; i < constituentRecordsList.length; i++) {
+			const cr = constituentRecordsList[i];
+
+			// Add the constituent record row
+			const { query: crQuery, values: crValues } = insertQueryGenerator(constituentRecords.tableName, cr);
+			// await this.netxCon.executeQuery(crQuery, crValues);
+
+			// Add the mapping between the main object and its constituents
+			const mapping = { constituentRecordId: cr.constituentID, objectId: or.objectId };
+			const { query: mapQuery, values: mapValues } = insertQueryGenerator(objectConstituentMappings.tableName, mapping);
+			// await this.netxCon.executeQuery(mapQuery, mapValues);
+		}
+
+		// Add media information record
+		const { query: miQuery, values: miValues } = insertQueryGenerator(mediaInformation.tableName, mediaInformationObject);
+		// await this.netxCon.executeQuery(miQuery, miValues);
+	}
+
+	/** Takes an object record and parses it into the objects needed by the 
+	 * - main_object_information
+	 * - constituent_records
+	 * - media_information
+	 *  tables and returns them  */
+	private createObjectsForTables(or: ObjectRecord) {
+
+		const mainInformationObject = {};
+		const mediaInformationObject = {};
+		let constituentRecordsList;
+
+		// Get the field names and values -- i.e. the eventual column names, and values for this object
 		for (let [fieldName, fieldValue] of Object.entries(or)) {
 
-			// We only want to add this field if it's defined in the columns we need for the table
-			const fieldIsNeededColumn = destinationTable.columns.some((column) => column.name === fieldName);
-			if (fieldIsNeededColumn) {
+			// Check if the current field is needed in the main object/media information object
+			const fieldNeededInMainObject = NetXTables.mainObjectInformation.columns.some((column) => column.name === fieldName);
+			const fieldNeededInMediaInformationObject = NetXTables.mediaInformation.columns.some((column) => column.name === fieldName);
 
-				//  Fields get added to this table and built into this row -- except Constituent Record field
-				// which is the only non-primitive field we have so it gets handle differently later
-				if (fieldName !== CONSTITUENT_RECORD) {
-					columnNamesToInsert.push(`"${fieldName}"`);
-					valuesToInsert.push(fieldValue);
-				}
+			if (fieldNeededInMainObject) {
+				mainInformationObject[fieldName] = fieldValue;
+			}
+
+			if (fieldNeededInMediaInformationObject) {
+				mediaInformationObject[fieldName] = fieldValue;
+			}
+
+			// If this is the constituent records field, we know we need it right off the bat
+			if (fieldName === CONSTITUENT_RECORD) {
+				constituentRecordsList = fieldValue;
 			}
 		}
 
-		// Once we've gone through all the field names - we can build our insert query
-		const columnString = columnNamesToInsert.join();
-		const valuesPlaceholder = valuesToInsert.map((_, index) => `$${index + 1}`).join();
+		// Now that we've created each needed object -- the objects require some calculated fields
+		mainInformationObject['caption'] = this.generateCaptionForMainObject(mainInformationObject, constituentRecordsList);
 
-		// Build our query for this row
-		const query = `
-		INSERT INTO ${destinationTable.tableName} (${columnString})
-		VALUES (${valuesPlaceholder})
-		`;
+		// Add the calculated fields for constituent records
+		constituentRecordsList = this.generateConstituentCalculatedFields(constituentRecordsList);
 
-		// Execute the query to insert the object row row
-		await this.netxCon.executeQuery(query, valuesToInsert);
 
-		// If the Constituent Record list exists, let's handle it
-		if ()
+		return { mainInformationObject, constituentRecordsList, mediaInformationObject };
 	}
 
-	private async addConstituentRecordToNetX(constituentRecords) {
+	private generateCaptionForMainObject(mainInformationObject: { [key: string]: string }, constituentRecords: ObjectRecord['ConstituentRecord']): string {
 
+		// Get the needed fields from the main object
+		const { title, dated, medium, objectNumber, creditLine } = mainInformationObject;
+
+		// Get the needed fields from the constituent records
+		const crInformation = constituentRecords.map((cr) => {
+			const { firstName, lastName } = cr;
+			return { firstName, lastName };
+		});
+
+		let captionString = '';
+
+		// Cascade all the way down adding fields in order
+		crInformation.forEach((cr) => captionString += `${cr.firstName} ${cr.lastName}. `);
+
+		if (title) captionString += `${title}, `;
+		if (dated) captionString += `${dated}, `;
+		if (medium) captionString += `${medium}.`
+
+		captionString += 'The Barnes Foundation, ';
+
+		if (objectNumber) captionString += `${objectNumber}. `;
+		if (creditLine) captionString += `${creditLine}`;
+
+		return captionString;
+	}
+
+	private generateConstituentCalculatedFields(constituentRecords: ObjectRecord['ConstituentRecord']) {
+
+		constituentRecords.forEach((cr) => {
+
+			const { firstName, lastName, prefix, suffix, nationality, beginDate, endDate, role } = cr;
+
+			let constituentName = '';
+			let fullConstituent = '';
+
+
+			if (prefix) fullConstituent += `${prefix} `;
+
+			if (firstName) {
+				constituentName += `${firstName} `;
+				fullConstituent += `${firstName} `;
+			}
+
+			if (lastName) {
+				constituentName += `${lastName} `;
+				fullConstituent += `${lastName} `;
+			}
+
+			if (suffix) fullConstituent += `${suffix} `;
+			if (nationality) fullConstituent += `${nationality} `;
+			if (beginDate) fullConstituent += `${beginDate} `;
+			if (endDate) fullConstituent += `${endDate}`;
+
+			let fullConstituentAndRole = Object.assign('', fullConstituent);
+			if (role) fullConstituentAndRole += ` ${role}`;
+
+			cr['constituentName'] = constituentName;
+			cr['fullConstituent'] = fullConstituent;
+			cr['fullConstituentAndRole'] = fullConstituentAndRole
+		});
+
+		return constituentRecords;
 	}
 }
+
