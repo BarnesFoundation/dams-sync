@@ -136,9 +136,7 @@ export class ObjectProcess {
 
 			// If this is the constituent records field, we know we need it right off the bat
 			if (fieldName === CONSTITUENT_RECORD) {
-				constituentRecordsList = or.ConstituentRecord;
-
-				constituentRecordsList.map((cr) => {
+				constituentRecordsList = or.ConstituentRecord.map((cr) => {
 					const usableCr = {};
 
 					for (let [key, value] of Object.entries(cr)) {
