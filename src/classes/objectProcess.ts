@@ -35,37 +35,48 @@ export class ObjectProcess {
 	private objectId: number;
 	private tmsCon: SQLConnection;
 	private netxCon: SQLConnection;
+	private processNumber: number;
+	private batchNumber: number;
 
-	constructor(objectId: ObjectID, tmsCon: SQLConnection, netxCon: SQLConnection) {
+	constructor(objectId: ObjectID, tmsCon: SQLConnection, netxCon: SQLConnection, processNumber: number, batchNumber: number) {
 		this.objectId = objectId.ID;
 		this.tmsCon = tmsCon;
 		this.netxCon = netxCon;
+		this.processNumber = processNumber;
+		this.batchNumber = batchNumber;
 	}
 
 	/** Handles performing the main process to parsing and adding an object to the NetX database */
 	public async perform() {
+		return new Promise(async (resolve) => {
 
-		// Query to get the Online Collection Payload for this object id
-		const collectionPayloadQuery = `
+			// Query to get the Online Collection Payload for this object id
+			const collectionPayloadQuery = `
 			SELECT TextEntry 
 			FROM TextEntries 
 			WHERE ID = ${this.objectId} 
 			AND TextTypeId = 67`;
 
-		// Execute the query
-		const recordset = (await this.tmsCon.executeQuery(collectionPayloadQuery)).recordset as CollectionPayloadTextEntry[];
+			// Execute the query
+			const recordset = (await this.tmsCon.executeQuery(collectionPayloadQuery)).recordset as CollectionPayloadTextEntry[];
 
-		// Get the text entry - which is a JSON string and parse it	
-		const cpTextEntry = recordset[0].TextEntry;
-		const cp = JSON.parse(cpTextEntry) as CollectionPayload;
+			// Get the text entry - which is a JSON string and parse it	
+			const cpTextEntry = recordset[0].TextEntry;
+			const cp = JSON.parse(cpTextEntry) as CollectionPayload;
 
-		// Iterate through each object record
-		for (let i = 0; i < cp[OBJECT_RECORD].length; i++) {
+			// Iterate through each object record
+			for (let i = 0; i < cp[OBJECT_RECORD].length; i++) {
 
-			// Add it to the NetX intermediate database
-			const or = cp[OBJECT_RECORD][i];
-			await this.addObjectRecordToNetX(or);
-		}
+				// Add it to the NetX intermediate database
+				const or = cp[OBJECT_RECORD][i];
+				await this.addObjectRecordToNetX(or);
+			}
+
+			resolve();
+
+			// Inform that the batch this process belongs to has completed
+			if (this.processNumber > 0 && this.processNumber % 99 == 0) console.log(`Completed Batch Number ${this.batchNumber}`);
+		});
 	}
 
 	/** Performs the necessary functions in order to prepate and add an object to NetX database */
@@ -106,7 +117,7 @@ export class ObjectProcess {
 
 		const mainInformationObject = {};
 		const mediaInformationObject = {};
-		let constituentRecordsList;
+		let constituentRecordsList: ObjectRecord['ConstituentRecord'];
 
 		// Get the field names and values -- i.e. the eventual column names, and values for this object
 		for (let [fieldName, fieldValue] of Object.entries(or)) {
@@ -125,7 +136,22 @@ export class ObjectProcess {
 
 			// If this is the constituent records field, we know we need it right off the bat
 			if (fieldName === CONSTITUENT_RECORD) {
-				constituentRecordsList = fieldValue;
+				constituentRecordsList = or.ConstituentRecord;
+
+				constituentRecordsList.map((cr) => {
+					const usableCr = {};
+
+					for (let [key, value] of Object.entries(cr)) {
+						// Check if the current field name is needed in the constituent record object
+						const fieldNameNeededInCR = NetXTables.constituentRecords.columns.some((column) => column.name === fieldName);
+
+						if (fieldNameNeededInCR) {
+							usableCr[key] = value;
+						}
+					}
+
+					return usableCr;
+				});
 			}
 		}
 

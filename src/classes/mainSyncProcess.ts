@@ -145,19 +145,20 @@ export class MainSyncProcess {
 		const { recordset, count } = await this.getCollectionObjectIDs();
 
 		// Set up batches of object retrieval to run
-		const parallelExecutionLimit = 1;
+		const parallelExecutionLimit = 100;
 		const numberOfBatches = Math.ceil(count / parallelExecutionLimit);
 
+		console.log(`There will be ${numberOfBatches} batches of ${parallelExecutionLimit} executions each`);
+
 		// Retrieve the objects in batches
-		for (let i = 0; i <= 0; i++) {
+		for (let i = 0; i <= numberOfBatches; i++) {
 
 			// Setup this batch
 			const batchStart = i * parallelExecutionLimit;
 			const batchArguments = recordset.slice(batchStart, (batchStart + parallelExecutionLimit));
 
 			const batchRequests = batchArguments.map((argument, index) => {
-
-				const op = new ObjectProcess(argument, this.tmsCon, this.netxCon);
+				const op = new ObjectProcess(argument, this.tmsCon, this.netxCon, index, i);
 				return op.perform();
 			});
 
