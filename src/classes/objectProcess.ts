@@ -56,14 +56,14 @@ export class ObjectProcess {
 			const collectionPayloadQuery = `
 			SELECT TextEntry 
 			FROM TextEntries 
-			WHERE ID = ${4482/* this.objectId */} 
+			WHERE ID = ${this.objectId} 
 			AND TextTypeId = 67`;
 
 			// Execute the query
 			const recordset = (await this.tmsCon.executeQuery(collectionPayloadQuery)).recordset as CollectionPayloadTextEntry[];
 
 			// Get the text entry - which is a JSON string and parse it	
-			const cpTextEntry = recordset[0].TextEntry.replace(/[\n\t\r]+/g, '');
+			const cpTextEntry = recordset[0].TextEntry.replace(/[\n\r\t]/g, '');
 
 			let cp;
 			try { cp = JSON.parse(cpTextEntry) as CollectionPayload; }
