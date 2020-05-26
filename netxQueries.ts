@@ -8,7 +8,7 @@ INNER JOIN main_object_information ON media_information."objectId" = main_object
 WHERE "renditionNumber" = '91-22-42_i1'
 `;
 
-// For retrieiving all of the constituents associated with a rendition number/object id
+// For retrieiving all of the constituents associated with a rendition number
 const constituentsForFullRecord = `
 SELECT * 
 FROM constituent_records
