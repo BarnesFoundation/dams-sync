@@ -1,3 +1,5 @@
+import utf8 from 'utf8';
+
 import { ObjectID, CollectionPayloadTextEntry, CollectionPayload, ObjectRecord } from '../interfaces/queryResponses';
 import { SQLConnection } from './sql';
 import { NetXTables } from '../constants/netXDatabase';
@@ -61,8 +63,16 @@ export class ObjectProcess {
 			const recordset = (await this.tmsCon.executeQuery(collectionPayloadQuery)).recordset as CollectionPayloadTextEntry[];
 
 			// Get the text entry - which is a JSON string and parse it	
-			const cpTextEntry = recordset[0].TextEntry;
-			const cp = JSON.parse(cpTextEntry) as CollectionPayload;
+			const cpTextEntry = recordset[0].TextEntry.replace(/[\n\r]+/g, '');
+
+			let cp;
+			try { cp = JSON.parse(cpTextEntry) as CollectionPayload; }
+
+			catch (error) {
+				console.log(`Encountered an error parsing JSON`);
+				console.log(`Offending object was ${this.objectId}`);
+				process.exit(0);
+			}
 
 			// Iterate through each object record
 			for (let i = 0; i < cp[OBJECT_RECORD].length; i++) {
@@ -122,7 +132,7 @@ export class ObjectProcess {
 		// Get the field names and values -- i.e. the eventual column names, and values for this object
 		for (let [fieldName, fieldValue] of Object.entries(or)) {
 
-			// Check if the current field is needed in the main object/media information object
+			// Check if the current field is needed in the main object/media information objects
 			const fieldNeededInMainObject = NetXTables.mainObjectInformation.columns.some((column) => column.name === fieldName);
 			const fieldNeededInMediaInformationObject = NetXTables.mediaInformation.columns.some((column) => column.name === fieldName);
 
@@ -137,18 +147,18 @@ export class ObjectProcess {
 			// If this is the constituent records field, we know we need it right off the bat
 			if (fieldName === CONSTITUENT_RECORD) {
 				constituentRecordsList = or.ConstituentRecord.map((cr) => {
-					const usableCr = {};
+					const constituentRecordObject = {};
 
+					// Check if the current field name is needed in the constituent record object
 					for (let [key, value] of Object.entries(cr)) {
-						// Check if the current field name is needed in the constituent record object
 						const fieldNameNeededInCR = NetXTables.constituentRecords.columns.some((column) => column.name === key);
 
 						if (fieldNameNeededInCR) {
-							usableCr[key] = value;
+							constituentRecordObject[key] = value;
 						}
 					}
 
-					return usableCr;
+					return constituentRecordObject;
 				});
 			}
 		}
@@ -158,7 +168,6 @@ export class ObjectProcess {
 
 		// Add the calculated fields for constituent records
 		constituentRecordsList = this.generateConstituentCalculatedFields(constituentRecordsList);
-
 
 		return { mainInformationObject, constituentRecordsList, mediaInformationObject };
 	}
