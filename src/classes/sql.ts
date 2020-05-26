@@ -1,5 +1,5 @@
 import mssql from 'mssql';
-import pg from 'pg';
+import pg, { Pool, PoolClient } from 'pg';
 
 interface ConnectionParams {
 	host: string,
@@ -48,17 +48,14 @@ export class SQLConnection {
 
 			// Set connection to psql
 			if (this.type === PSQL) {
-				this.connection = await new pg.Client({
+				this.connection = new Pool({
 					user: this.user,
 					host: this.host,
 					database: this.database,
 					password: this.password
 				});
-
-				this.connection.connect();
 			}
-
-			console.log(`Successfully connected to the ${this.type} database`);
+			console.log(`Successfully connected to the ${this.type} database and created pool`);
 		}
 
 		catch (error) {
@@ -66,14 +63,18 @@ export class SQLConnection {
 		}
 	}
 
-	/** Executes the query for the database
+	/** ONLY for use with the PSQL connection -- checks out a client from the pool */
+	public async checkoutClient(): Promise<PoolClient> {
+		const client = await this.connection.connect();
+		return client;
+	}
+
+	/** Executes the query for the MSSQL database
 	 * @params query - The query to run. 
 	 * 	For an MSSQL connection, query can be concatenated string per docs https://www.npmjs.com/package/mssql#es6-tagged-template-literals
-	 * 	For a PSQL connection, query must be parameterized query https://node-postgres.com/features/queries#Parameterized%20query
 	 * 
-	 * @params values - The values to be substitued into the query string. Only for use with PSQL connection
 	 */
-	public async executeQuery(query: string, values?: string[] | number[]) {
+	public async executeQuery(query: string) {
 
 		let results;
 
@@ -81,11 +82,6 @@ export class SQLConnection {
 			if (this.type === MSSQL) {
 				// For the mssql driver, you can pass the interpolated string
 				results = await this.connection.query(query);
-			}
-
-			if (this.type === PSQL) {
-				// For the psql driver, you pass a parameterized query along with the values that must be substituted into the query5
-				results = await this.connection.query(query, values)
 			}
 
 			return results;

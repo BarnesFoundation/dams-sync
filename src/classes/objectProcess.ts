@@ -3,6 +3,7 @@ import utf8 from 'utf8';
 import { ObjectID, CollectionPayloadTextEntry, CollectionPayload, ObjectRecord } from '../interfaces/queryResponses';
 import { SQLConnection } from './sql';
 import { NetXTables } from '../constants/netXDatabase';
+import { PoolClient } from 'pg';
 
 const OBJECT_RECORD = 'objectRecord';
 const CONSTITUENT_RECORD = 'ConstituentRecord';
@@ -37,6 +38,7 @@ export class ObjectProcess {
 	private objectId: number;
 	private tmsCon: SQLConnection;
 	private netxCon: SQLConnection;
+	private netxClient: PoolClient;
 	private processNumber: number;
 	private batchNumber: number;
 
@@ -51,6 +53,9 @@ export class ObjectProcess {
 	/** Handles performing the main process to parsing and adding an object to the NetX database */
 	public async perform() {
 		return new Promise(async (resolve) => {
+
+			// Since we're going to perform SQL transactions on NetX - checkout a client
+			this.netxClient = await this.netxCon.checkoutClient();
 
 			// Query to get the Online Collection Payload for this object id
 			const collectionPayloadQuery = `
@@ -82,6 +87,8 @@ export class ObjectProcess {
 				await this.addObjectRecordToNetX(or);
 			}
 
+			// Now that we've finished everything - release the client
+			this.netxClient.release();
 			resolve();
 
 			// Inform that the batch this process belongs to has completed
@@ -97,7 +104,7 @@ export class ObjectProcess {
 
 		// Add the main object record
 		const { query: moQuery, values: moValues } = insertQueryGenerator(mainObjectInformation.tableName, mainInformationObject);
-		await this.netxCon.executeQuery(moQuery, moValues);
+		await this.netxClient.query(moQuery, moValues);
 
 		// Add each constituent record
 		for (let i = 0; i < constituentRecordsList.length; i++) {
@@ -105,17 +112,17 @@ export class ObjectProcess {
 
 			// Add the constituent record row
 			const { query: crQuery, values: crValues } = insertQueryGenerator(constituentRecords.tableName, cr);
-			await this.netxCon.executeQuery(crQuery, crValues);
+			await this.netxClient.query(crQuery, crValues);
 
 			// Add the mapping between the main object and its constituents
 			const mapping = { constituentRecordId: cr.constituentID, objectId: or.objectId };
 			const { query: mapQuery, values: mapValues } = insertQueryGenerator(objectConstituentMappings.tableName, mapping);
-			await this.netxCon.executeQuery(mapQuery, mapValues);
+			await this.netxClient.query(mapQuery, mapValues);
 		}
 
 		// Add media information record
 		const { query: miQuery, values: miValues } = insertQueryGenerator(mediaInformation.tableName, mediaInformationObject);
-		await this.netxCon.executeQuery(miQuery, miValues);
+		await this.netxClient.query(miQuery, miValues);
 	}
 
 	/** Takes an object record and parses it into the objects needed by the 
