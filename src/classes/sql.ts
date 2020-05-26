@@ -69,12 +69,13 @@ export class SQLConnection {
 		return client;
 	}
 
-	/** Executes the query for the MSSQL database
+	/** Executes the query for the database
 	 * @params query - The query to run. 
 	 * 	For an MSSQL connection, query can be concatenated string per docs https://www.npmjs.com/package/mssql#es6-tagged-template-literals
 	 * 
+	 * @params values - The values to be substitued into the query string. Only for use with PSQL connection
 	 */
-	public async executeQuery(query: string) {
+	public async executeQuery(query: string, values?: string[] | number[]) {
 
 		let results;
 
@@ -82,6 +83,11 @@ export class SQLConnection {
 			if (this.type === MSSQL) {
 				// For the mssql driver, you can pass the interpolated string
 				results = await this.connection.query(query);
+			}
+
+			if (this.type === PSQL) {
+				// For the psql driver, you pass a parameterized query along with the values that must be substituted into the query5
+				results = await this.connection.query(query, values)
 			}
 
 			return results;

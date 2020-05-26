@@ -80,7 +80,7 @@ export class ObjectProcess {
 			}
 
 			// Iterate through each object record
-			for (let i = 0; i < cp[OBJECT_RECORD].length; i++) {
+			for (let i = 0; i <= cp[OBJECT_RECORD].length; i++) {
 
 				// Add it to the NetX intermediate database
 				const or = cp[OBJECT_RECORD][i];
@@ -107,7 +107,7 @@ export class ObjectProcess {
 		await this.netxClient.query(moQuery, moValues);
 
 		// Add each constituent record
-		for (let i = 0; i < constituentRecordsList.length; i++) {
+		for (let i = 0; i <= constituentRecordsList.length; i++) {
 			const cr = constituentRecordsList[i];
 
 			// Add the constituent record row
