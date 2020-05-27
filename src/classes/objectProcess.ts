@@ -193,7 +193,11 @@ export class ObjectProcess {
 		let captionString = '';
 
 		// Cascade all the way down adding fields in order
-		crInformation.forEach((cr) => captionString += `${cr.firstName} ${cr.lastName}. `);
+		crInformation.forEach((cr) => {
+
+			if (cr.firstName) captionString += `${cr.firstName}`;
+			if (cr.lastName) captionString += `${cr.lastName}. `;
+		});
 
 		if (title) captionString += `${title}, `;
 		if (dated) captionString += `${dated}, `;
