@@ -80,6 +80,10 @@ const insertQueryGenerator = (tableName: string, object: { [key: string]: any })
 	const columnNamesToInsert = [];
 	const values = [];
 
+	if (!object) {
+		console.log(tableName, object);
+	}
+
 	for (let [fieldName, fieldValue] of Object.entries(object)) {
 		columnNamesToInsert.push(`"${fieldName}"`);
 		values.push(fieldValue);
@@ -95,6 +99,8 @@ const insertQueryGenerator = (tableName: string, object: { [key: string]: any })
 	VALUES (${valuesPlaceholder})
 	ON CONFLICT DO NOTHING
 	`;
+
+	console.log(query, '\n', values);
 
 	return { query, values };
 };
