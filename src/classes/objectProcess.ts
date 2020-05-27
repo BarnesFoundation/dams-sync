@@ -74,12 +74,11 @@ export class ObjectProcess {
 			try { cp = JSON.parse(cpTextEntry) as CollectionPayload; }
 
 			catch (error) {
-				console.log(`Encountered an error parsing JSON`);
-				console.log(`Offending object was ${this.objectId}`);
+				console.log(`Encountered an error parsing JSON. Offending object was ${this.objectId}`);
 				process.exit(0);
 			}
 
-			// Iterate through each object record
+			// Iterate through each object record provided in the text entry
 			for (let i = 0; i <= cp[OBJECT_RECORD].length; i++) {
 
 				// Add it to the NetX intermediate database
@@ -179,6 +178,7 @@ export class ObjectProcess {
 		return { mainInformationObject, constituentRecordsList, mediaInformationObject };
 	}
 
+	/** Generates the caption for a main object record. The caption is a field made by combining several other fields, including the list of related constituents */
 	private generateCaptionForMainObject(mainInformationObject: { [key: string]: string }, constituentRecords: ObjectRecord['ConstituentRecord']): string {
 
 		// Get the needed fields from the main object
@@ -207,6 +207,9 @@ export class ObjectProcess {
 		return captionString;
 	}
 
+	/** Generates the constituentName, fullConstituent, and fullConstituentAndRole fields as these are fields made from several individual fields.
+	 * Adds these generated fields to each constituent record in the constituents records list
+	 */
 	private generateConstituentCalculatedFields(constituentRecords: ObjectRecord['ConstituentRecord']) {
 
 		constituentRecords.forEach((cr) => {
