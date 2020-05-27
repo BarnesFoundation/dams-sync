@@ -1,37 +1,11 @@
-import utf8 from 'utf8';
-
 import { ObjectID, CollectionPayloadTextEntry, CollectionPayload, ObjectRecord } from '../interfaces/queryResponses';
 import { SQLConnection } from './sql';
 import { NetXTables } from '../constants/netXDatabase';
 import { PoolClient } from 'pg';
+import ObjectHelpers from '../constants/objectHelpers';
 
 const OBJECT_RECORD = 'objectRecord';
 const CONSTITUENT_RECORD = 'ConstituentRecord';
-
-const insertQueryGenerator = (tableName: string, object: { [key: string]: any }) => {
-
-	const columnNamesToInsert = [];
-	const values = [];
-
-	for (let [fieldName, fieldValue] of Object.entries(object)) {
-		columnNamesToInsert.push(`"${fieldName}"`);
-		values.push(fieldValue);
-	}
-
-	// Once we've gone through all the field names - we can build our insert query
-	const columnString = columnNamesToInsert.join();
-	const valuesPlaceholder = values.map((_, index) => `$${index + 1}`).join();
-
-	// Build our query for this row
-	const query = `
-	INSERT INTO ${tableName} (${columnString})
-	VALUES (${valuesPlaceholder})
-	ON CONFLICT DO NOTHING
-	`;
-
-	return { query, values };
-};
-
 
 export class ObjectProcess {
 
@@ -102,7 +76,7 @@ export class ObjectProcess {
 		const { mainInformationObject, mediaInformationObject, constituentRecordsList } = this.createObjectsForTables(or);
 
 		// Add the main object record
-		const { query: moQuery, values: moValues } = insertQueryGenerator(mainObjectInformation.tableName, mainInformationObject);
+		const { query: moQuery, values: moValues } = ObjectHelpers.insertQueryGenerator(mainObjectInformation.tableName, mainInformationObject);
 		await this.netxClient.query(moQuery, moValues);
 
 		// Add each constituent record
@@ -110,17 +84,17 @@ export class ObjectProcess {
 			const cr = constituentRecordsList[i];
 
 			// Add the constituent record row
-			const { query: crQuery, values: crValues } = insertQueryGenerator(constituentRecords.tableName, cr);
+			const { query: crQuery, values: crValues } = ObjectHelpers.insertQueryGenerator(constituentRecords.tableName, cr);
 			await this.netxClient.query(crQuery, crValues);
 
 			// Add the mapping between the main object and its constituents
 			const mapping = { constituentRecordId: cr.constituentID, objectId: or.objectId };
-			const { query: mapQuery, values: mapValues } = insertQueryGenerator(objectConstituentMappings.tableName, mapping);
+			const { query: mapQuery, values: mapValues } = ObjectHelpers.insertQueryGenerator(objectConstituentMappings.tableName, mapping);
 			await this.netxClient.query(mapQuery, mapValues);
 		}
 
 		// Add media information record
-		const { query: miQuery, values: miValues } = insertQueryGenerator(mediaInformation.tableName, mediaInformationObject);
+		const { query: miQuery, values: miValues } = ObjectHelpers.insertQueryGenerator(mediaInformation.tableName, mediaInformationObject);
 		await this.netxClient.query(miQuery, miValues);
 	}
 
@@ -170,85 +144,12 @@ export class ObjectProcess {
 		}
 
 		// Now that we've created each needed object -- the objects require some calculated fields
-		mainInformationObject['caption'] = this.generateCaptionForMainObject(mainInformationObject, constituentRecordsList);
+		mainInformationObject['caption'] = ObjectHelpers.generateCaptionForMainObject(mainInformationObject, constituentRecordsList);
 
 		// Add the calculated fields for constituent records
-		constituentRecordsList = this.generateConstituentCalculatedFields(constituentRecordsList);
+		constituentRecordsList = ObjectHelpers.generateConstituentCalculatedFields(constituentRecordsList);
 
 		return { mainInformationObject, constituentRecordsList, mediaInformationObject };
-	}
-
-	/** Generates the caption for a main object record. The caption is a field made by combining several other fields, including the list of related constituents */
-	private generateCaptionForMainObject(mainInformationObject: { [key: string]: string }, constituentRecords: ObjectRecord['ConstituentRecord']): string {
-
-		// Get the needed fields from the main object
-		const { title, dated, medium, objectNumber, creditLine } = mainInformationObject;
-
-		// Get the needed fields from the constituent records
-		const crInformation = constituentRecords.map((cr) => {
-			const { firstName, lastName } = cr;
-			return { firstName, lastName };
-		});
-
-		let captionString = '';
-
-		// Cascade all the way down adding fields in order
-		crInformation.forEach((cr) => {
-
-			if (cr.firstName) captionString += `${cr.firstName}`;
-			if (cr.lastName) captionString += `${cr.lastName}. `;
-		});
-
-		if (title) captionString += `${title}, `;
-		if (dated) captionString += `${dated}, `;
-		if (medium) captionString += `${medium}.`
-
-		captionString += 'The Barnes Foundation, ';
-
-		if (objectNumber) captionString += `${objectNumber}. `;
-		if (creditLine) captionString += `${creditLine}`;
-
-		return captionString;
-	}
-
-	/** Generates the constituentName, fullConstituent, and fullConstituentAndRole fields as these are fields made from several individual fields.
-	 * Adds these generated fields to each constituent record in the constituents records list
-	 */
-	private generateConstituentCalculatedFields(constituentRecords: ObjectRecord['ConstituentRecord']) {
-
-		constituentRecords.forEach((cr) => {
-
-			const { firstName, lastName, prefix, suffix, nationality, beginDate, endDate, role } = cr;
-
-			let constituentName = '';
-			let fullConstituent = '';
-
-
-			if (prefix) fullConstituent += `${prefix} `;
-
-			if (firstName) {
-				constituentName += `${firstName} `;
-				fullConstituent += `${firstName} `;
-			}
-
-			if (lastName) {
-				constituentName += `${lastName} `;
-				fullConstituent += `${lastName} `;
-			}
-
-			if (suffix) fullConstituent += `${suffix} `;
-			if (nationality) fullConstituent += `${nationality} `;
-			if (beginDate) fullConstituent += `${beginDate} `;
-			if (endDate) fullConstituent += `${endDate}`;
-
-			let fullConstituentAndRole = `${fullConstituent} ${role}`;
-
-			cr['constituentName'] = constituentName;
-			cr['fullConstituent'] = fullConstituent;
-			cr['fullConstituentAndRole'] = fullConstituentAndRole
-		});
-
-		return constituentRecords;
 	}
 }
 
