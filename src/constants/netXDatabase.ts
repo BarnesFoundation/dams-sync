@@ -61,9 +61,8 @@ export const NetXTables: TablesInformation = {
 	objectConstituentMappings: {
 		tableName: 'object_constituent_mappings',
 		columns: [
-			{ name: 'id', type: 'SERIAL', primary: true },
-			{ name: 'constituentRecordId', type: 'INTEGER', foreign: true },
-			{ name: 'objectId', type: 'INTEGER' }
+			{ name: 'constituentRecordId', type: 'INTEGER', primary: true, foreign: true },
+			{ name: 'objectId', type: 'INTEGER', primary: true, foreign: true }
 		]
 	},
 

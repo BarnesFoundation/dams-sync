@@ -71,24 +71,30 @@ export class MainSyncProcess {
 		};
 
 		const createObjectConstituentTable = async () => {
-			const { objectConstituentMappings, constituentRecords } = NetXTables;
+			const { objectConstituentMappings, constituentRecords, mainObjectInformation } = NetXTables;
 
 			const constituentRecordsName = constituentRecords.tableName;
 			const constituentRecordsPrimaryColumn = constituentRecords.columns[0];
 
-			const primaryColumn = objectConstituentMappings.columns[0];
-			const foreignColumn = objectConstituentMappings.columns[1];
-			const additionalColumn = objectConstituentMappings.columns[2];
+			const moName = mainObjectInformation.tableName;
+			const moPrimary = mainObjectInformation.columns[0];
+
+			const primaryColumn1 = objectConstituentMappings.columns[0];
+			const primaryColumn2 = objectConstituentMappings.columns[1];
 
 			// Query to create table
 			const query = `
 			CREATE TABLE IF NOT EXISTS ${objectConstituentMappings.tableName} (
-				"${primaryColumn.name}" ${primaryColumn.type} PRIMARY KEY,
-				"${foreignColumn.name}" ${foreignColumn.type},
-				"${additionalColumn.name}" ${additionalColumn.type},
+				"${primaryColumn1.name}" ${primaryColumn1.type},
+				"${primaryColumn2.name}" ${primaryColumn2.type},
+				PRIMARY KEY ("${primaryColumn1.name}", "${primaryColumn2.name}"),
 
-				CONSTRAINT ${constituentRecordsName}_id_fkey FOREIGN KEY ("${foreignColumn.name}")
+				CONSTRAINT ${constituentRecordsName}_id_fkey FOREIGN KEY ("${primaryColumn1.name}")
 					REFERENCES ${constituentRecordsName} ("${constituentRecordsPrimaryColumn.name}") MATCH SIMPLE
+					ON DELETE NO ACTION,
+
+				CONSTRAINT ${moName}_id_fkey FOREIGN KEY ("${primaryColumn2.name}")
+					REFERENCES ${moName} ("${moPrimary.name}") MATCH SIMPLE
 					ON DELETE NO ACTION
 			);
 			`;

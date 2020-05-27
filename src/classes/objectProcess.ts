@@ -90,7 +90,16 @@ export class ObjectProcess {
 			// Add the mapping between the main object and its constituents
 			const mapping = { constituentRecordId: cr.constituentID, objectId: or.objectId };
 			const { query: mapQuery, values: mapValues } = ObjectHelpers.insertQueryGenerator(objectConstituentMappings.tableName, mapping);
-			await this.netxClient.query(mapQuery, mapValues);
+			try {
+				await this.netxClient.query(mapQuery, mapValues);
+
+			}
+			catch (error) {
+				console.log(`An error occurred doing mapping`, error);
+				console.log(mapQuery);
+				console.log(mapValues);
+				process.exit(0);
+			}
 		}
 
 		// Add media information record

@@ -100,8 +100,6 @@ const insertQueryGenerator = (tableName: string, object: { [key: string]: any })
 	ON CONFLICT DO NOTHING
 	`;
 
-	console.log(query, '\n', values);
-
 	return { query, values };
 };
 
