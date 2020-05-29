@@ -1,4 +1,6 @@
 import { ObjectRecord } from '../interfaces/queryResponses';
+import { TableInformation } from '../interfaces/netXDatabaseInterfaces';
+
 
 
 /** Generates the constituentName, fullConstituent, and fullConstituentAndRole fields as these are fields made from several individual fields.
@@ -75,8 +77,9 @@ const generateCaptionForMainObject = (mainInformationObject: { [key: string]: st
 };
 
 /** Generates the query for inserting a record along with the values to be inserted */
-const insertQueryGenerator = (tableName: string, object: { [key: string]: any }) => {
+const insertQueryGenerator = (table: TableInformation, object: { [key: string]: any }) => {
 
+	const { tableName } = table;
 	const columnNamesToInsert = [];
 	const values = [];
 
@@ -93,14 +96,47 @@ const insertQueryGenerator = (tableName: string, object: { [key: string]: any })
 	const columnString = columnNamesToInsert.join();
 	const valuesPlaceholder = values.map((_, index) => `$${index + 1}`).join();
 
+	const onConflictCommand = generateOnConflictCommand(table, columnNamesToInsert);
+
 	// Build our query for this row
 	const query = `
 	INSERT INTO ${tableName} (${columnString})
 	VALUES (${valuesPlaceholder})
-	ON CONFLICT DO NOTHING
+	${onConflictCommand}
 	`;
 
 	return { query, values };
+};
+
+const generateOnConflictCommand = (table: TableInformation, columnNamesToInsert: string[]): string => {
+
+	// Get the primary key columns as these are how we'l know a conflict occurs
+	const primaryColumns = table.columns.filter((column) => column.primary == true).map((column) => `"${column.name}"`);
+	const constraintString = `(${primaryColumns.join()})`;
+
+	// Generate the columns to set string
+	const setList = columnNamesToInsert.reduce((acc, column) => {
+
+		// Check if this column is a primary column
+		const isColumnPrimary = primaryColumns.some((pc) => pc === column);
+
+		// We only want to set columns that are NOT the primary column(s)
+		if (!isColumnPrimary) { acc.push(`${column} = EXCLUDED.${column}\n`); }
+
+		return acc;
+
+	}, []);
+
+	// When there are columns to set -- we'll update. Otherwise, if we have no columns to set 
+	// then it's only the primary key columns that would be updated, do nothing because we don't want to override our primary id's
+	const setString =  (setList.length > 0) ? `DO UPDATE SET ${setList.join()}` : 'DO NOTHING'
+
+	const onConflictString = `
+	ON CONFLICT ${constraintString}
+	${setString}
+	`;
+
+	return onConflictString;
 };
 
 

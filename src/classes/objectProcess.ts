@@ -76,7 +76,7 @@ export class ObjectProcess {
 		const { mainInformationObject, mediaInformationObject, constituentRecordsList } = this.createObjectsForTables(or);
 
 		// Add the main object record
-		const { query: moQuery, values: moValues } = ObjectHelpers.insertQueryGenerator(mainObjectInformation.tableName, mainInformationObject);
+		const { query: moQuery, values: moValues } = ObjectHelpers.insertQueryGenerator(mainObjectInformation, mainInformationObject);
 		await this.netxClient.query(moQuery, moValues);
 
 		// Add each constituent record
@@ -84,12 +84,12 @@ export class ObjectProcess {
 			const cr = constituentRecordsList[i];
 
 			// Add the constituent record row
-			const { query: crQuery, values: crValues } = ObjectHelpers.insertQueryGenerator(constituentRecords.tableName, cr);
+			const { query: crQuery, values: crValues } = ObjectHelpers.insertQueryGenerator(constituentRecords, cr);
 			await this.netxClient.query(crQuery, crValues);
 
 			// Add the mapping between the main object and its constituents
 			const mapping = { constituentRecordId: cr.constituentID, objectId: or.objectId };
-			const { query: mapQuery, values: mapValues } = ObjectHelpers.insertQueryGenerator(objectConstituentMappings.tableName, mapping);
+			const { query: mapQuery, values: mapValues } = ObjectHelpers.insertQueryGenerator(objectConstituentMappings, mapping);
 			try {
 				await this.netxClient.query(mapQuery, mapValues);
 
@@ -103,7 +103,7 @@ export class ObjectProcess {
 		}
 
 		// Add media information record
-		const { query: miQuery, values: miValues } = ObjectHelpers.insertQueryGenerator(mediaInformation.tableName, mediaInformationObject);
+		const { query: miQuery, values: miValues } = ObjectHelpers.insertQueryGenerator(mediaInformation, mediaInformationObject);
 		await this.netxClient.query(miQuery, miValues);
 	}
 
