@@ -1,0 +1,1 @@
+const damsSync = require('./dist/app.js');

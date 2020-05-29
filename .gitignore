@@ -1,3 +1,8 @@
 dist
 .env
 node_modules
+
+# Ignore the executables
+dams-sync-linux
+dams-sync-macos
+dams-sync-win.exe

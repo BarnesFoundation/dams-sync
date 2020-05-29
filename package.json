@@ -2,7 +2,8 @@
 	"name": "dams-sync",
 	"version": "1.0.0",
 	"description": "A sync process to copy archival information from TMS to an intermediate database that is then pulled from by the DAMS",
-	"main": "index.js",
+	"main": "dist/app.js",
+	"bin": "bin.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"watch": "tsc -w",
