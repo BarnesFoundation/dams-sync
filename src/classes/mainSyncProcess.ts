@@ -45,7 +45,6 @@ export class MainSyncProcess {
 
 		// Create the NetX media information table
 		await db.createMediaInformationTable();
-
 	};
 
 	/** Runs the main process tasks in the sync */

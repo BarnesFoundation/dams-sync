@@ -3,6 +3,7 @@ import { SQLConnection } from './sql';
 import { NetXTables } from '../constants/netXDatabase';
 import { PoolClient } from 'pg';
 import ObjectHelpers from '../constants/objectHelpers';
+import FieldHelpers from '../constants/fieldHelpers';
 
 const OBJECT_RECORD = 'objectRecord';
 const CONSTITUENT_RECORD = 'ConstituentRecord';
@@ -90,10 +91,8 @@ export class ObjectProcess {
 			// Add the mapping between the main object and its constituents
 			const mapping = { constituentRecordId: cr.constituentID, objectId: or.objectId };
 			const { query: mapQuery, values: mapValues } = ObjectHelpers.insertQueryGenerator(objectConstituentMappings, mapping);
-			try {
-				await this.netxClient.query(mapQuery, mapValues);
-
-			}
+			
+			try { await this.netxClient.query(mapQuery, mapValues); }
 			catch (error) {
 				console.log(`An error occurred doing mapping`, error);
 				console.log(mapQuery);
@@ -153,10 +152,10 @@ export class ObjectProcess {
 		}
 
 		// Now that we've created each needed object -- the objects require some calculated fields
-		mainInformationObject['caption'] = ObjectHelpers.generateCaptionForMainObject(mainInformationObject, constituentRecordsList);
+		mainInformationObject['caption'] = FieldHelpers.generateCaptionForMainObject(mainInformationObject, constituentRecordsList);
 
 		// Add the calculated fields for constituent records
-		constituentRecordsList = ObjectHelpers.generateConstituentCalculatedFields(constituentRecordsList);
+		constituentRecordsList = FieldHelpers.generateConstituentCalculatedFields(constituentRecordsList);
 
 		return { mainInformationObject, constituentRecordsList, mediaInformationObject };
 	}
