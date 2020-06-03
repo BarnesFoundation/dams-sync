@@ -3,12 +3,19 @@ import { NetXTables } from '../constants/netXDatabase';
 import FieldHelpers from '../constants/fieldHelpers';
 import { CONSTITUENT_RECORD } from '../constants/names';
 
+
+interface ObjectsForTables {
+	mainInformationObject: { [key: string]: any },
+	mediaInformationObject: { [key: string]: any },
+	constituentRecordsList: { [key: string]: any }[]
+}
+
 /** Takes an object record and parses it into the objects needed by the 
 	 * - main_object_information
 	 * - constituent_records
 	 * - media_information
 	 *  tables and returns them  */
-const createObjectsForTables = (or: ObjectRecord) => {
+const createObjectsForTables = (or: ObjectRecord): ObjectsForTables => {
 
 	const mainInformationObject = {};
 	const mediaInformationObject = {};
@@ -45,7 +52,7 @@ const createObjectsForTables = (or: ObjectRecord) => {
 	return { mainInformationObject, constituentRecordsList, mediaInformationObject };
 };
 
-const createListOfConstituentRecordObjects = (constituentRecords: ObjectRecord['ConstituentRecord']) => {
+const createListOfConstituentRecordObjects = (constituentRecords: ObjectRecord['ConstituentRecord']): {}[] => {
 	return constituentRecords.map((cr) => {
 
 		// Create the empty constituent record object
