@@ -1,5 +1,14 @@
-import { TablesInformation, TableInformation } from '../interfaces/netXDatabaseInterfaces';
+import { TablesInformation } from '../interfaces/netXDatabaseInterfaces';
 
+/** The information contained within these list of table objects is very important. You can consider them as crucial and be as 
+ * cautious with modifying the information below as you would with modifying the SQL for creating tables in a database.
+ * 
+ * Order of the columns typically does not matter aside from columns that are designated as primary/foreign keys. In the "DatabaseInitializer" class
+ * the index location of the primary/foreign keys in the columns list for these tables is used to specifically select them from the columns list.
+ * 
+ * If you modify the order/placement of any of these primary/foreign key designated columns, be sure to check that the corresponding SQL code in 
+ * the "DatabaseInitializer" class is updated to reflect that change
+ *  */
 export const NetXTables: TablesInformation = {
 
 	/** Main Object table where information about each object will be stored - some information will be duplicated, some will not

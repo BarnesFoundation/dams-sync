@@ -1,7 +1,7 @@
 import { ObjectID } from '../interfaces/queryResponses';
 import { SQLConnection } from './sql';
 import { ObjectProcess } from './objectProcess';
-import { NetXTables } from '../constants/netXDatabase';
+import { DatabaseInitializer } from './databaseInitializer';
 
 export class MainSyncProcess {
 
@@ -32,115 +32,19 @@ export class MainSyncProcess {
 	/** Initializes the NetX database as this should only run once during each sync*/
 	public initializeNetXDatabase = async () => {
 
-		const createMainObjectTable = async () => {
-
-			const { mainObjectInformation } = NetXTables;
-			const primaryColumn1 = mainObjectInformation.columns[0];
-
-			const columnsString = mainObjectInformation.columns.map((column, index, array) => `"${column.name}" ${column.type}`)
-				.join(',\n');
-
-			// Query to create table
-			const query = `
-			CREATE TABLE IF NOT EXISTS ${mainObjectInformation.tableName} (
-				${columnsString},
-				PRIMARY KEY ("${primaryColumn1.name}")
-			);
-			`;
-
-			await this.netxCon.executeQuery(query);
-		};
-
-		const createConstituentTable = async () => {
-
-			const { constituentRecords } = NetXTables;
-			const primaryColumn = constituentRecords.columns[0];
-
-			const columnsString = constituentRecords.columns.map((column, index, array) => `"${column.name}" ${column.type}`)
-				.join(',\n');
-
-			// Query to create table
-			const query = `
-			CREATE TABLE IF NOT EXISTS ${constituentRecords.tableName} (
-				${columnsString},
-				PRIMARY KEY ("${primaryColumn.name}")
-			);
-			`;
-
-			await this.netxCon.executeQuery(query);
-		};
-
-		const createObjectConstituentTable = async () => {
-			const { objectConstituentMappings, constituentRecords, mainObjectInformation } = NetXTables;
-
-			const constituentRecordsName = constituentRecords.tableName;
-			const constituentRecordsPrimaryColumn = constituentRecords.columns[0];
-
-			const moName = mainObjectInformation.tableName;
-			const moPrimary = mainObjectInformation.columns[0];
-
-			const primaryColumn1 = objectConstituentMappings.columns[0];
-			const primaryColumn2 = objectConstituentMappings.columns[1];
-
-			// Query to create table
-			const query = `
-			CREATE TABLE IF NOT EXISTS ${objectConstituentMappings.tableName} (
-				"${primaryColumn1.name}" ${primaryColumn1.type},
-				"${primaryColumn2.name}" ${primaryColumn2.type},
-				PRIMARY KEY ("${primaryColumn1.name}", "${primaryColumn2.name}"),
-
-				CONSTRAINT ${constituentRecordsName}_id_fkey FOREIGN KEY ("${primaryColumn1.name}")
-					REFERENCES ${constituentRecordsName} ("${constituentRecordsPrimaryColumn.name}") MATCH SIMPLE
-					ON DELETE NO ACTION,
-
-				CONSTRAINT ${moName}_id_fkey FOREIGN KEY ("${primaryColumn2.name}")
-					REFERENCES ${moName} ("${moPrimary.name}") MATCH SIMPLE
-					ON DELETE NO ACTION
-			);
-			`;
-
-			await this.netxCon.executeQuery(query);
-		};
-
-		const createMediaInformationTable = async () => {
-			const { mainObjectInformation, mediaInformation } = NetXTables;
-
-			const miName = mediaInformation.tableName;
-			const miPrimary = mediaInformation.columns[0];
-			const miForeign = mediaInformation.columns[1];
-
-			const moName = mainObjectInformation.tableName;
-			const moPrimary = mainObjectInformation.columns[0];
-
-			const columnsString = mediaInformation.columns.map((column, index, array) => `"${column.name}" ${column.type}`)
-				.join(',\n');
-
-			// Query to create table
-			const query = `
-			CREATE TABLE IF NOT EXISTS ${miName} (
-				${columnsString},
-				PRIMARY KEY ("${miPrimary.name}"),
-
-				CONSTRAINT ${moName}_objectId_fkey FOREIGN KEY ("${miForeign.name}")
-					REFERENCES ${moName} ("${moPrimary.name}") MATCH SIMPLE
-					ON DELETE NO ACTION
-			);
-			`;
-
-			await this.netxCon.executeQuery(query);
-		};
+		const db = new DatabaseInitializer(this.netxCon);
 
 		// Create the NetX main object table
-		await createMainObjectTable();
+		await db.createMainObjectTable();
 
 		// Create the NetX constituent records table
-		await createConstituentTable();
+		await db.createConstituentTable();
 
 		// Create the NetX object-constituent mappings table
-		await createObjectConstituentTable();
+		await db.createObjectConstituentTable();
 
 		// Create the NetX media information table
-		await createMediaInformationTable();
+		await db.createMediaInformationTable();
 
 	};
 
