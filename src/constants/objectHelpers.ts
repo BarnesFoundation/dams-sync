@@ -10,12 +10,27 @@ interface ObjectsForTables {
 	constituentRecordsList: { [key: string]: any }[]
 }
 
-/** Takes an object record and parses it into the objects needed by the 
-	 * - main_object_information
-	 * - constituent_records
-	 * - media_information
-	 *  tables and returns them  */
+/** Takes an object record returns the needed object records for each table  */
 const createObjectsForTables = (or: ObjectRecord): ObjectsForTables => {
+
+	let { mainInformationObject, constituentRecordsList, mediaInformationObject } = parseObjectRecordToObjects(or);
+
+	// Now that we've created each needed object -- the objects require some calculated fields
+	mainInformationObject['caption'] = FieldHelpers.generateCaptionForMainObject(mainInformationObject, constituentRecordsList);
+
+	// Add the calculated fields for constituent records
+	constituentRecordsList = FieldHelpers.generateConstituentCalculatedFields(constituentRecordsList);
+
+	return { mainInformationObject, constituentRecordsList, mediaInformationObject };
+};
+
+/** Parses the Object Record payload into individual records needed by the 
+ * - main_object_information
+ * - constituent_records
+ * - media_information 
+ * tables
+ * */
+const parseObjectRecordToObjects = (or: ObjectRecord): ObjectsForTables => {
 
 	const mainInformationObject = {};
 	const mediaInformationObject = {};
@@ -43,15 +58,10 @@ const createObjectsForTables = (or: ObjectRecord): ObjectsForTables => {
 		}
 	}
 
-	// Now that we've created each needed object -- the objects require some calculated fields
-	mainInformationObject['caption'] = FieldHelpers.generateCaptionForMainObject(mainInformationObject, constituentRecordsList);
-
-	// Add the calculated fields for constituent records
-	constituentRecordsList = FieldHelpers.generateConstituentCalculatedFields(constituentRecordsList);
-
 	return { mainInformationObject, constituentRecordsList, mediaInformationObject };
 };
 
+/** Takes the list of constituent records and transforms them by trimming out any unneeded fields that were included in the object */
 const createListOfConstituentRecordObjects = (constituentRecords: ObjectRecord['ConstituentRecord']): {}[] => {
 	return constituentRecords.map((cr) => {
 
