@@ -3,8 +3,6 @@ import { NetXTables } from '../constants/netXDatabase';
 import FieldHelpers from '../constants/fieldHelpers';
 import { CONSTITUENT_RECORD } from '../constants/names';
 
-
-
 /** Takes an object record and parses it into the objects needed by the 
 	 * - main_object_information
 	 * - constituent_records
@@ -31,22 +29,10 @@ const createObjectsForTables = (or: ObjectRecord) => {
 			mediaInformationObject[fieldName] = fieldValue;
 		}
 
-		// If this is the constituent records field, we know we need it right off the bat
+		// If this is the constituent records field, we know we need it right off the bat. We call a function that iterates through the list and
+		// returns to us the normalized objects needed for insertion to the database
 		if (fieldName === CONSTITUENT_RECORD) {
-			constituentRecordsList = or.ConstituentRecord.map((cr) => {
-				const constituentRecordObject = {};
-
-				// Check if the current field name is needed in the constituent record object
-				for (let [key, value] of Object.entries(cr)) {
-					const fieldNameNeededInCR = NetXTables.constituentRecords.columns.some((column) => column.name === key);
-
-					if (fieldNameNeededInCR) {
-						constituentRecordObject[key] = value;
-					}
-				}
-
-				return constituentRecordObject;
-			});
+			constituentRecordsList = createListOfConstituentRecordObjects(or.ConstituentRecord)
 		}
 	}
 
@@ -57,7 +43,27 @@ const createObjectsForTables = (or: ObjectRecord) => {
 	constituentRecordsList = FieldHelpers.generateConstituentCalculatedFields(constituentRecordsList);
 
 	return { mainInformationObject, constituentRecordsList, mediaInformationObject };
-}
+};
+
+const createListOfConstituentRecordObjects = (constituentRecords: ObjectRecord['ConstituentRecord']) => {
+	return constituentRecords.map((cr) => {
+
+		// Create the empty constituent record object
+		const constituentRecordObject = {};
+
+		// Check if the current field name is needed in the constituent record object
+		for (let [key, value] of Object.entries(cr)) {
+			const fieldNameNeededInCR = NetXTables.constituentRecords.columns.some((column) => column.name === key);
+
+			// If it is, add it
+			if (fieldNameNeededInCR) {
+				constituentRecordObject[key] = value;
+			}
+		}
+
+		return constituentRecordObject;
+	});
+};
 
 const ObjectHelpers = {
 	createObjectsForTables

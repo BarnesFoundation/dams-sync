@@ -1,4 +1,6 @@
-/** These are the queries NetX can use to query the intermediate database in order to build the record in the DAMS */
+/** These are the queries NetX can use to query the intermediate database in order to build the record in the DAMS 
+ * Not used by any of our code within src/. 
+*/
 
 // For retrieving a fully populated record with the needed object fields and media information -- NOT INCLUDING CONSTITUENTS
 const fullRecord = `
