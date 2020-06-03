@@ -1,74 +1,66 @@
-import { TableInformation } from '../interfaces/netXDatabaseInterfaces';
+import { ObjectRecord } from '../interfaces/queryResponses';
+import { NetXTables } from '../constants/netXDatabase';
+import FieldHelpers from '../constants/fieldHelpers';
+import { CONSTITUENT_RECORD } from '../constants/names';
 
-/** Generates the query for inserting a record along with the values to be inserted */
-const insertQueryGenerator = (table: TableInformation, object: { [key: string]: any }) => {
 
-	const { tableName } = table;
-	const columnNamesToInsert = [];
-	const values = [];
 
-	if (!object) {
-		console.log(tableName, object);
+/** Takes an object record and parses it into the objects needed by the 
+	 * - main_object_information
+	 * - constituent_records
+	 * - media_information
+	 *  tables and returns them  */
+const createObjectsForTables = (or: ObjectRecord) => {
+
+	const mainInformationObject = {};
+	const mediaInformationObject = {};
+	let constituentRecordsList: ObjectRecord['ConstituentRecord'];
+
+	// Get the field names and values -- i.e. the eventual column names, and values for this object
+	for (let [fieldName, fieldValue] of Object.entries(or)) {
+
+		// Check if the current field is needed in the main object/media information objects
+		const fieldNeededInMainObject = NetXTables.mainObjectInformation.columns.some((column) => column.name === fieldName);
+		const fieldNeededInMediaInformationObject = NetXTables.mediaInformation.columns.some((column) => column.name === fieldName);
+
+		if (fieldNeededInMainObject) {
+			mainInformationObject[fieldName] = fieldValue;
+		}
+
+		if (fieldNeededInMediaInformationObject) {
+			mediaInformationObject[fieldName] = fieldValue;
+		}
+
+		// If this is the constituent records field, we know we need it right off the bat
+		if (fieldName === CONSTITUENT_RECORD) {
+			constituentRecordsList = or.ConstituentRecord.map((cr) => {
+				const constituentRecordObject = {};
+
+				// Check if the current field name is needed in the constituent record object
+				for (let [key, value] of Object.entries(cr)) {
+					const fieldNameNeededInCR = NetXTables.constituentRecords.columns.some((column) => column.name === key);
+
+					if (fieldNameNeededInCR) {
+						constituentRecordObject[key] = value;
+					}
+				}
+
+				return constituentRecordObject;
+			});
+		}
 	}
 
-	for (let [fieldName, fieldValue] of Object.entries(object)) {
-		columnNamesToInsert.push(`"${fieldName}"`);
-		values.push(fieldValue);
-	}
+	// Now that we've created each needed object -- the objects require some calculated fields
+	mainInformationObject['caption'] = FieldHelpers.generateCaptionForMainObject(mainInformationObject, constituentRecordsList);
 
-	// Once we've gone through all the field names - we can build our insert query
-	const columnString = columnNamesToInsert.join();
-	const valuesPlaceholder = values.map((_, index) => `$${index + 1}`).join();
+	// Add the calculated fields for constituent records
+	constituentRecordsList = FieldHelpers.generateConstituentCalculatedFields(constituentRecordsList);
 
-	const onConflictCommand = generateOnConflictCommand(table, columnNamesToInsert);
-
-	// Build our query for this row
-	const query = `
-	INSERT INTO ${tableName} (${columnString})
-	VALUES (${valuesPlaceholder})
-	${onConflictCommand}
-	`;
-
-	return { query, values };
-};
-
-/** Generates the ON CONFLICT cluase of the insert query. This is crucial for records that already exist in the database to be updated with
- * new information during future runs.
- */
-const generateOnConflictCommand = (table: TableInformation, columnNamesToInsert: string[]): string => {
-
-	// Get the primary key columns as these are how we'l know a conflict occurs
-	const primaryColumns = table.columns.filter((column) => column.primary == true).map((column) => `"${column.name}"`);
-	const constraintString = `(${primaryColumns.join()})`;
-
-	// Generate the columns to set string
-	const setList = columnNamesToInsert.reduce((acc, column) => {
-
-		// Check if this column is a primary column
-		const isColumnPrimary = primaryColumns.some((pc) => pc === column);
-
-		// We only want to set columns that are NOT the primary column(s)
-		if (!isColumnPrimary) { acc.push(`${column} = EXCLUDED.${column}\n`); }
-
-		return acc;
-
-	}, []);
-
-	// When there are columns to set -- we'll update. Otherwise, if we have no columns to set 
-	// then it's only the primary key columns that would be updated, do nothing because we don't want to override our primary id's
-	const setString =  (setList.length > 0) ? `DO UPDATE SET ${setList.join()}` : 'DO NOTHING'
-
-	const onConflictString = `
-	ON CONFLICT ${constraintString}
-	${setString}
-	`;
-
-	return onConflictString;
-};
-
+	return { mainInformationObject, constituentRecordsList, mediaInformationObject };
+}
 
 const ObjectHelpers = {
-	insertQueryGenerator
+	createObjectsForTables
 };
 
 export default ObjectHelpers;
