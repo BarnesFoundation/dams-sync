@@ -13,7 +13,7 @@ interface ObjectsForTables {
 /** Takes an object record returns the needed object records for each table  */
 const createObjectsForTables = (or: ObjectRecord): ObjectsForTables => {
 
-	let { mainInformationObject, constituentRecordsList, mediaInformationObject } = parseObjectRecordToObjects(or);
+	let { mainInformationObject, constituentRecordsList, mediaInformationObject } = parseRecordToObjects(or);
 
 	// Now that we've created each needed object -- the objects require some calculated fields
 	mainInformationObject['caption'] = FieldHelpers.generateCaptionForMainObject(mainInformationObject, constituentRecordsList);
@@ -30,7 +30,7 @@ const createObjectsForTables = (or: ObjectRecord): ObjectsForTables => {
  * - media_information 
  * tables
  * */
-const parseObjectRecordToObjects = (or: ObjectRecord): ObjectsForTables => {
+const parseRecordToObjects = (or: ObjectRecord): ObjectsForTables => {
 
 	const mainInformationObject = {};
 	const mediaInformationObject = {};
