@@ -14,7 +14,8 @@ CROSS JOIN (
 	STRING_AGG("fullConstituent"::text,'; ') as "fullConstituent",
 	STRING_AGG("fullConstituentAndRole"::text,'; ') as "fullConstituentAndRole"
 	FROM constituent_records
-	INNER JOIN object_constituent_mappings ON constituent_records."constituentID" = object_constituent_mappings."constituentRecordId"
+	INNER JOIN object_constituent_mappings 
+	ON constituent_records."constituentID" = object_constituent_mappings."constituentRecordId"
 	WHERE object_constituent_mappings."objectId" = 
 	(
 		SELECT "objectId"
