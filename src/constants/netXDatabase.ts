@@ -91,6 +91,7 @@ export const NetXTables: TablesInformation = {
 			{ name: 'renditionDate', type: 'VARCHAR' },
 			{ name: 'technique', type: 'VARCHAR' },
 			{ name: 'publicCaption', type: 'VARCHAR' },
+			{ name: 'mediaView', type: 'VARCHAR' },
 		]
 	}
 };
