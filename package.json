@@ -7,7 +7,8 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"watch": "tsc -w",
-		"start": "node dist/app.js"
+		"start": "node dist/app.js",
+		"build": "pkg ."
 	},
 	"author": "Christopher D Jativa",
 	"license": "ISC",
@@ -22,6 +23,7 @@
 		"dotenv": "^8.2.0",
 		"mssql": "^6.2.0",
 		"pg": "^8.2.1",
+		"pkg": "^4.4.9",
 		"utf8": "^3.0.0"
 	}
 }
