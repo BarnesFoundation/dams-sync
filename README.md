@@ -44,7 +44,7 @@ The typical deployment setup would look like this
 2. Deploy an empty database schema on AWS (or local for local development) and make note of the needed values for the `.env` file
 3. Get the credentials for connecting to the TMS database
 4. Populate the `.env` file accordingly
-5. Run `npm run build` to create the Windows executable for the sync
+5. Run `npm run build` to create the Windows executable for the sync ([pkg](https://www.npmjs.com/package/pkg "pkg") is used to do this)
 6. Deploy the created Windows executable and a production-ready version of the `.env` file to the machine that will be running the sync
 7. Set up Windows Task Scheduler or some other scheduler to execute the executable such that it runs the process periodically
 
