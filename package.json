@@ -8,7 +8,8 @@
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"watch": "tsc -w",
 		"start": "node dist/app.js",
-		"build": "pkg ."
+		"build": "pkg .",
+		"postbuild": "zip dams-sync.zip .env dams-sync-win.exe"
 	},
 	"author": "Christopher D Jativa",
 	"license": "ISC",
