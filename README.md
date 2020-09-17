@@ -31,9 +31,12 @@ Once the sync has pulled the information for each artwork object, and the corres
 
 The intermediate database allows access from internal Barnes Foundation IP addresses as well as from a pre-defined range of IP addresses provided to us by NetX. This is needed in order for them to query the information in the intermediate database such that it can flow into NetX's own application database.
 
-If you are developing or testing locally, it'd be best to take a back-up of the existing intermediate database and host it locally during your development process. You'll need to update create a `.env` file based off the [`.env.template`](https://github.com/BarnesFoundation/dams-sync/blob/master/.env.template "`.env.template`") with your own values to have this sync run successfully.
+# Development 
+If you are developing or testing locally, it'd be best to take a back-up of the existing intermediate database and host it locally during your development process. You can also start up a new PostgreSQL database locally and this sync process will then create the necessary table structure in that database for you.
 
-You can start the script locally with `npm start`.
+You'll need to update create a `.env` file based off the [`.env.template`](https://github.com/BarnesFoundation/dams-sync/blob/master/.env.template "`.env.template`") with your own values to have this sync run successfully.
+
+You can start the script locally with `npm start`, which will attempt to create the needed table structure (if your database happens to be an empty schema). It will then perform the sync process as well.
 
 # Deployment
 
