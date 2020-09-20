@@ -6,9 +6,10 @@
 	"bin": "bin.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
+		"compile": "tsc -p ./",
 		"watch": "tsc -w",
 		"start": "node dist/app.js",
-		"build": "pkg .",
+		"build": "npm run compile && pkg .",
 		"postbuild": "zip dams-sync.zip .env dams-sync-win.exe"
 	},
 	"author": "Christopher D Jativa",
