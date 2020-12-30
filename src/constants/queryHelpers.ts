@@ -1,7 +1,8 @@
 import { TableInformation } from '../interfaces/netXDatabaseInterfaces';
+import { NormalObject } from '../interfaces/queryResponses';
 
 /** Generates the query for inserting a record along with the values to be inserted */
-const insertQueryGenerator = (table: TableInformation, object: { [key: string]: any }) => {
+const insertQueryGenerator = (table: TableInformation, object: NormalObject) => {
 
 	const { tableName } = table;
 	const columnNamesToInsert = [];
