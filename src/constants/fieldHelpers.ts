@@ -1,4 +1,4 @@
-import { ObjectRecord } from '../interfaces/queryResponses';
+import { ObjectRecord, NormalObject } from '../interfaces/queryResponses';
 
 /** Generates the constituentName, fullConstituent, and fullConstituentAndRole fields as these are fields made from several individual fields.
   * Adds these generated fields to each constituent record in the constituents records list
@@ -41,7 +41,7 @@ const generateConstituentCalculatedFields = (constituentRecords: ObjectRecord['C
 };
 
 /** Generates the caption for a main object record. The caption is a field made by combining several other fields, including the list of related constituents */
-const generateCaptionForMainObject = (mainInformationObject: { [key: string]: string }, constituentRecords: ObjectRecord['ConstituentRecord']): string => {
+const generateCaptionForMainObject = (mainInformationObject: NormalObject, constituentRecords: ObjectRecord['ConstituentRecord']): string => {
 
 	// Get the needed fields from the main object
 	const { title, dated, medium, objectNumber, creditLine } = mainInformationObject;
