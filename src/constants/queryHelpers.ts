@@ -5,29 +5,44 @@ import { NormalObject } from '../interfaces/queryResponses';
 const insertQueryGenerator = (table: TableInformation, object: NormalObject) => {
 
 	const { tableName } = table;
-	const columnNamesToInsert = [];
-	const values = [];
+	const columnNamesToInsert = Object.keys(object).map((columnName) => `"${columnName}"`);
+	const values = Object.values(object);
 
-	if (!object) {
-		console.log(tableName, object);
-	}
+	// Generate the conflict command
+	const onConflictCommand = __generateOnConflictCommand(table, columnNamesToInsert);
 
-	for (let [fieldName, fieldValue] of Object.entries(object)) {
-		columnNamesToInsert.push(`"${fieldName}"`);
-		values.push(fieldValue);
-	}
-
-	// Once we've gone through all the field names - we can build our insert query
+	// Generate the column string and placeholder
 	const columnString = columnNamesToInsert.join();
 	const valuesPlaceholder = values.map((_, index) => `$${index + 1}`).join();
 
-	const onConflictCommand = generateOnConflictCommand(table, columnNamesToInsert);
-
-	// Build our query for this row
+	// Build our insert query for this object
 	const query = `
 	INSERT INTO ${tableName} (${columnString})
 	VALUES (${valuesPlaceholder})
 	${onConflictCommand}
+	`;
+
+	// Generate the primary column condition so we can locate this object
+	const whereCondition = table.columns
+		.filter((column) => column.primary == true)
+		.reduce((acc, column, index) => {
+
+			// If there was more than 1 column, we'll need to append "AND" for additional conditionals
+			if (index > 0) {
+				acc += 'AND ';
+			}
+
+			acc += `"${column.name}" = '${object[column.name]}'`
+
+			return acc;
+		}, '');
+
+	// Build our select query for this object
+	const selectQuery = `
+	SELECT ${columnString}
+	FROM "${tableName}"
+	WHERE ${whereCondition}
+
 	`;
 
 	return { query, values };
@@ -36,7 +51,7 @@ const insertQueryGenerator = (table: TableInformation, object: NormalObject) => 
 /** Generates the ON CONFLICT cluase of the insert query. This is crucial for records that already exist in the database to be updated with
  * new information during future runs.
  */
-const generateOnConflictCommand = (table: TableInformation, columnNamesToInsert: string[]): string => {
+const __generateOnConflictCommand = (table: TableInformation, columnNamesToInsert: string[]): string => {
 
 	// Get the primary key columns as these are how we'l know a conflict occurs
 	const primaryColumns = table.columns.filter((column) => column.primary == true).map((column) => `"${column.name}"`);
@@ -57,7 +72,7 @@ const generateOnConflictCommand = (table: TableInformation, columnNamesToInsert:
 
 	// When there are columns to set -- we'll update. Otherwise, if we have no columns to set 
 	// then it's only the primary key columns that would be updated, do nothing because we don't want to override our primary id's
-	const setString =  (setList.length > 0) ? `DO UPDATE SET ${setList.join()}` : 'DO NOTHING'
+	const setString = (setList.length > 0) ? `DO UPDATE SET ${setList.join()}` : 'DO NOTHING'
 
 	const onConflictString = `
 	ON CONFLICT ${constraintString}
