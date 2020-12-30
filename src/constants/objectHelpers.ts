@@ -1,13 +1,13 @@
-import { ObjectRecord } from '../interfaces/queryResponses';
+import { ObjectRecord, NormalObject } from '../interfaces/queryResponses';
 import { NetXTables } from '../constants/netXDatabase';
 import FieldHelpers from '../constants/fieldHelpers';
 import { CONSTITUENT_RECORD } from '../constants/names';
 
 
 interface ObjectsForTables {
-	mainInformationObject: { [key: string]: any },
-	mediaInformationObject: { [key: string]: any },
-	constituentRecordsList: { [key: string]: any }[]
+	mainInformationObject: NormalObject,
+	mediaInformationObject: NormalObject,
+	constituentRecordsList: NormalObject[]
 }
 
 /** Takes an object record returns the needed object records for each table  */
