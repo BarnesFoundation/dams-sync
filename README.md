@@ -42,14 +42,20 @@ You can start the script locally with `npm start`, which will attempt to create 
 
 Currently, deployment of this sync is a manual process as we only have 1 environment for the process — the Production environment.
 
-The typical deployment setup would look like this
+The typical deployment setup would look like this - first you build the executable, then deploy it.
+
+Build
+
 1. Pull this code repository and run `npm install` to install the needed dependencies
 2. Deploy an empty database schema on AWS (or local for local development) and make note of the needed values for the `.env` file
 3. Get the credentials for connecting to the TMS database
 4. Populate the `.env` file accordingly
 5. Run `npm run build` to create the Windows executable for the sync ([pkg](https://www.npmjs.com/package/pkg "pkg") is used to do this)
-6. Deploy the created Windows executable and a production-ready version of the `.env` file to the machine that will be running the sync
-7. Set up Windows Task Scheduler or some other scheduler to execute the executable such that it runs the process periodically
+
+Deploy 
+
+1. Deploy the created Windows executable and a production-ready version of the `.env` file to the machine that will be running the sync
+2. Set up Windows Task Scheduler or some other scheduler to execute the executable such that it runs the process periodically
 
 The `npm start` command starts the sync. During each run, the sync checks if the connected NetX Intermediate Database has the proper table structure and columns. 
 
