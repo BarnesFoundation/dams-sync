@@ -39,6 +39,7 @@ export const NetXTables: TablesInformation = {
 			{ name: 'bibliography', type: 'VARCHAR' },
 			{ name: 'dimensions', type: 'VARCHAR' },
 			{ name: 'caption', type: 'VARCHAR' },
+			{ name: 'lastUpdated', type: 'TIMESTAMPTZ'}
 		]
 	},
 
@@ -60,7 +61,8 @@ export const NetXTables: TablesInformation = {
 
 			{ name: 'constituentName', type: 'VARCHAR' },
 			{ name: 'fullConstituent', type: 'VARCHAR' },
-			{ name: 'fullConstituentAndRole', type: 'VARCHAR' }
+			{ name: 'fullConstituentAndRole', type: 'VARCHAR' },
+			{ name: 'lastUpdated', type: 'TIMESTAMPTZ'}
 		]
 	},
 
@@ -92,7 +94,8 @@ export const NetXTables: TablesInformation = {
 			{ name: 'technique', type: 'VARCHAR' },
 			{ name: 'publicCaption', type: 'VARCHAR' },
 			{ name: 'mediaView', type: 'VARCHAR' },
-			{ name: 'publicAccess', type: 'INTEGER' }
+			{ name: 'publicAccess', type: 'INTEGER' },
+			{ name: 'lastUpdated', type: 'TIMESTAMPTZ'}
 		]
 	}
 };

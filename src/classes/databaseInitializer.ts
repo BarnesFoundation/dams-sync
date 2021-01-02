@@ -86,7 +86,7 @@ export class DatabaseInitializer {
 
 	/** Creates the media information table. Sets up the needed foreign/primary key relationship with it and the main object table,
 	 *  generates the raw sql to do so and executes it */
-	 public createMediaInformationTable = async () => {
+	public createMediaInformationTable = async () => {
 		const { mainObjectInformation, mediaInformation } = NetXTables;
 
 		const miName = mediaInformation.tableName;
@@ -112,5 +112,35 @@ export class DatabaseInitializer {
 		`;
 
 		await this.netxCon.executeQuery(query);
+	};
+
+	/** Creates the function for updating the lastUpdated field of each table and the associated trigger */
+	public createLastUpdatedTrigger = async () => {
+
+		// Create the function for updated the column
+		const functionQuery = `
+		CREATE OR REPLACE FUNCTION last_upd_trig() RETURNS trigger
+			LANGUAGE plpgsql AS
+		$$BEGIN
+			NEW."lastUpdated" := current_timestamp;
+			RETURN NEW;
+		END;$$;
+		`
+		await this.netxCon.executeQuery(functionQuery);
+
+		// Create the trigger onto each table
+		const triggerTables = [NetXTables.mainObjectInformation, NetXTables.constituentRecords, NetXTables.mediaInformation];
+		for (let i = 0; i < triggerTables.length; i++) {
+			const table = triggerTables[i];
+
+			const triggerQuery = `
+			DROP TRIGGER IF EXISTS last_upd_trigger ON ${table.tableName};
+			CREATE TRIGGER last_upd_trigger
+				BEFORE INSERT OR UPDATE ON ${table.tableName}
+				FOR EACH ROW
+				EXECUTE PROCEDURE last_upd_trig();
+			`;
+			await this.netxCon.executeQuery(triggerQuery);
+		}
 	};
 }
