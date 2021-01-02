@@ -115,7 +115,7 @@ export class ObjectProcess {
 
 			// Add the media object
 			const mediaRecord = QueryHelpers.insertQueryGenerator(NetXTables.mediaInformation, mediaInformationObject);
-			await this.addRecordWithDiff(mediaRecord, mediaInformationObject, NetXTables.mainObjectInformation);
+			await this.addRecordWithDiff(mediaRecord, mediaInformationObject, NetXTables.mediaInformation);
 		}
 	};
 
