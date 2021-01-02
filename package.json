@@ -22,6 +22,7 @@
 		"typescript": "^3.9.2"
 	},
 	"dependencies": {
+		"deep-object-diff": "^1.1.0",
 		"dotenv": "^8.2.0",
 		"mssql": "^6.2.0",
 		"pg": "^8.2.1",
