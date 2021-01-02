@@ -2,9 +2,11 @@ import { ObjectID, CollectionPayloadTextEntry, CollectionPayload, ObjectRecord, 
 import { SQLConnection } from './sql';
 import { NetXTables } from '../constants/netXDatabase';
 import { PoolClient } from 'pg';
-import QueryHelpers from '../constants/queryHelpers';
+import QueryHelpers, { QueryPayload } from '../constants/queryHelpers';
 import ObjectHelpers from '../constants/objectHelpers';
 import { OBJECT_RECORD } from '../constants/names';
+import DiffService from '../services/diffService';
+import { TableInformation } from '../interfaces/netXDatabaseInterfaces';
 
 export class ObjectProcess {
 
@@ -47,7 +49,8 @@ export class ObjectProcess {
 			`;
 
 			// Execute the query and get the text entry - which is a JSON string and parse it	
-			const recordset = (await this.tmsCon.executeQuery(collectionPayloadQuery)).recordset as CollectionPayloadTextEntry[];
+			const result = await this.tmsCon.executeQuery(collectionPayloadQuery)
+			const recordset = result.recordset as CollectionPayloadTextEntry[];
 			const cpTextEntry = recordset[0].TextEntry.replace(/[\n\r\t]/g, '');
 
 			try {
@@ -56,7 +59,7 @@ export class ObjectProcess {
 			}
 
 			catch (error) {
-				console.log(`Encountered an error parsing JSON. Offending object was ${this.objectId}`);
+				console.log(`Encountered an error parsing JSON. Offending object was ${this.objectId}`, error);
 			}
 
 			// Now that we've finished everything - release the client
@@ -64,12 +67,17 @@ export class ObjectProcess {
 			resolve();
 
 			// Inform that the batch this process belongs to has completed
-			if (this.processNumber > 0 && this.processNumber % 99 == 0) console.log(`Completed Batch Number ${this.batchNumber}`);
+			if (this.processNumber > 0 && this.processNumber % 99 == 0) {
+				console.log(`Completed Batch Number ${this.batchNumber}`);
+			}
 		});
 	}
 
 	/** Performs the necessary functions in order to prepate and add an object to NetX database */
 	private async addObjectRecordToNetX(collectionPayload: CollectionPayload) {
+
+		// Initialize the diff list
+		DiffService.initializeDiffList();
 
 		// Iterate through each object record in the payload
 		for (let i = 0; i < collectionPayload[OBJECT_RECORD].length; i++) {
@@ -78,51 +86,67 @@ export class ObjectProcess {
 			const objectRecord = collectionPayload[OBJECT_RECORD][i];
 			const { mainInformationObject, mediaInformationObject, constituentRecordsList } = ObjectHelpers.createObjectsForTables(objectRecord);
 
-			// Add the records
-			await this.addMainObject(mainInformationObject);
-			await this.addConstituentObjects(constituentRecordsList, objectRecord);
-			await this.addMediaObject(mediaInformationObject);
-		}
-	};
+			// Add the main object record
+			const mainRecord = QueryHelpers.insertQueryGenerator(NetXTables.mainObjectInformation, mainInformationObject);
+			await this.addRecordWithDiff(mainRecord, mainInformationObject, NetXTables.mainObjectInformation);
 
-	/** Adds the record for the "main_object_information" table */
-	private async addMainObject(mainObject: NormalObject) {
+			// Add the constituent records
+			for (let i = 0; i < constituentRecordsList.length; i++) {
+				const cr = constituentRecordsList[i];
 
-		// Add the main object record
-		const mainRecord = QueryHelpers.insertQueryGenerator(NetXTables.mainObjectInformation, mainObject);
-		await this.netxClient.query(mainRecord.query, mainRecord.values);
-	};
+				// Add the constituent record row
+				const constRecord = QueryHelpers.insertQueryGenerator(NetXTables.constituentRecords, cr);
+				await this.addRecordWithDiff(constRecord, cr, NetXTables.constituentRecords);
 
-	/** Adds the records for the "constituent_records" and "object_constituent_mappings" tables */
-	private async addConstituentObjects(constituentRecordsList: NormalObject[], objectRecord: ObjectRecord) {
+				// Add the mapping between the main object and its constituents
+				const mapping = { constituentRecordId: cr.constituentID, objectId: parseInt(objectRecord.objectId) };
+				const mappingRecord = QueryHelpers.insertQueryGenerator(NetXTables.objectConstituentMappings, mapping);
 
-		// Add each constituent record
-		for (let i = 0; i < constituentRecordsList.length; i++) {
-			const cr = constituentRecordsList[i];
+				try {
+					await this.addRecordWithDiff(mappingRecord, mapping, NetXTables.objectConstituentMappings);
+				}
 
-			// Add the constituent record row
-			const constRecord = QueryHelpers.insertQueryGenerator(NetXTables.constituentRecords, cr);
-			await this.netxClient.query(constRecord.query, constRecord.values);
-
-			// Add the mapping between the main object and its constituents
-			const mapping = { constituentRecordId: cr.constituentID, objectId: objectRecord.objectId };
-			const mappingRecord = QueryHelpers.insertQueryGenerator(NetXTables.objectConstituentMappings, mapping);
-
-			try { await this.netxClient.query(mappingRecord.query, mappingRecord.values); }
-			catch (error) {
-				console.log(`An error occurred doing mapping`, error);
-				console.log(mappingRecord.query);
-				console.log(mappingRecord.values);
+				catch (error) {
+					console.log(`An error adding doing mapping`, error);
+					console.log(mappingRecord.query);
+					console.log(mappingRecord.values);
+				}
 			}
+
+			// Add the media object
+			const mediaRecord = QueryHelpers.insertQueryGenerator(NetXTables.mediaInformation, mediaInformationObject);
+			await this.addRecordWithDiff(mediaRecord, mediaInformationObject, NetXTables.mainObjectInformation);
 		}
 	};
 
-	/** Adds the record for the "media_information" table */
-	private async addMediaObject(mediaInformationObject: NormalObject) {
+	/** Compares the record to be written to the database with the existing record in the database and 
+	 * captures the difference between the two records
+	 */
+	private async addRecordWithDiff(possibleNewRecord: QueryPayload, normalObject: NormalObject, table: TableInformation) {
 
-		// Add media information record
-		const mediaRecord = QueryHelpers.insertQueryGenerator(NetXTables.mediaInformation, mediaInformationObject);
-		await this.netxClient.query(mediaRecord.query, mediaRecord.values);
+		// Execute the select query to know what is in the database for this record
+		const { rows } = await this.netxClient.query<NormalObject[]>(possibleNewRecord.selectQuery);
+		const existingRecord = (rows.length > 0)
+			? rows.pop()
+			: {}
+			;
+
+		// Let's compare the two
+		const diffInformation = DiffService.areEqual(existingRecord, normalObject);
+
+		// Only if the records weren't equal will we update the database record and store the diff
+		if (diffInformation.areEqual === false) {
+
+			// Get the unique identifier for this record and table it belongs to
+			const pKey = table.columns.filter((column) =>
+				column.hasOwnProperty('primary') && column.primary
+			).pop().name;
+			const pValue = normalObject[pKey];
+
+			// Have the new record overwrite the existing one in the database
+			DiffService.addToDiffList(diffInformation.diff, table.tableName, pValue);
+			await this.netxClient.query(possibleNewRecord.query, possibleNewRecord.values);
+		}
 	};
 }
 
