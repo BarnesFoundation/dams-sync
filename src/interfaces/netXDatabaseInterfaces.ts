@@ -13,7 +13,7 @@ export interface TableInformation {
 	}
 }
 
-interface ColumnInformation {
+export interface ColumnInformation {
 	name: string,
 	type: 'VARCHAR' | 'INTEGER' | 'SERIAL' | 'TIMESTAMPTZ',
 	primary?: true,
