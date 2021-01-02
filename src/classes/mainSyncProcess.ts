@@ -2,6 +2,7 @@ import { ObjectID } from '../interfaces/queryResponses';
 import { SQLConnection } from './sql';
 import { ObjectProcess } from './objectProcess';
 import { DatabaseInitializer } from './databaseInitializer';
+import DiffService from '../services/diffService';
 
 export class MainSyncProcess {
 
@@ -45,6 +46,9 @@ export class MainSyncProcess {
 
 		// Create the NetX media information table
 		await db.createMediaInformationTable();
+
+		// Create the triggers for the tbales
+		await db.createLastUpdatedTrigger();
 	};
 
 	/** Runs the main process tasks in the sync */
@@ -74,6 +78,10 @@ export class MainSyncProcess {
 			// Execute the batches of promises
 			await Promise.all(batchRequests);
 		}
+
+		// By this point, we've added all the objects to the database
+		// Let's save the diff
+		await DiffService.writeToFile();
 	};
 }
 
