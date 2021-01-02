@@ -1,15 +1,21 @@
 import { TableInformation } from '../interfaces/netXDatabaseInterfaces';
 import { NormalObject } from '../interfaces/queryResponses';
 
+export interface QueryPayload {
+	query: string,
+	values: (string | number)[],
+	selectQuery: string,
+}
+
 /** Generates the query for inserting a record along with the values to be inserted */
-const insertQueryGenerator = (table: TableInformation, object: NormalObject) => {
+const insertQueryGenerator = (table: TableInformation, object: NormalObject): QueryPayload => {
 
 	const { tableName } = table;
 	const columnNamesToInsert = Object.keys(object).map((columnName) => `"${columnName}"`);
 	const values = Object.values(object);
 
 	// Generate the conflict command
-	const onConflictCommand = __generateOnConflictCommand(table, columnNamesToInsert);
+	const onConflictCommand = generateOnConflictCommand(table, columnNamesToInsert);
 
 	// Generate the column string and placeholder
 	const columnString = columnNamesToInsert.join();
@@ -45,13 +51,13 @@ const insertQueryGenerator = (table: TableInformation, object: NormalObject) => 
 
 	`;
 
-	return { query, values };
+	return { query, values, selectQuery };
 };
 
 /** Generates the ON CONFLICT cluase of the insert query. This is crucial for records that already exist in the database to be updated with
  * new information during future runs.
  */
-const __generateOnConflictCommand = (table: TableInformation, columnNamesToInsert: string[]): string => {
+const generateOnConflictCommand = (table: TableInformation, columnNamesToInsert: string[]): string => {
 
 	// Get the primary key columns as these are how we'l know a conflict occurs
 	const primaryColumns = table.columns.filter((column) => column.primary == true).map((column) => `"${column.name}"`);
