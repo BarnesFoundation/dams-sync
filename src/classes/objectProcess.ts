@@ -99,7 +99,7 @@ export class ObjectProcess {
 				await this.addRecordWithDiff(constRecord, cr, NetXTables.constituentRecords);
 
 				// Add the mapping between the main object and its constituents
-				const mapping = { constituentRecordId: cr.constituentID, objectId: parseInt(objectRecord.objectId) };
+				const mapping = { constituentRecordId: parseInt(cr.constituentID.toString()), objectId: parseInt(objectRecord.objectId) };
 				const mappingRecord = QueryHelpers.insertQueryGenerator(NetXTables.objectConstituentMappings, mapping);
 
 				try {
