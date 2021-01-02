@@ -132,10 +132,28 @@ export class ObjectProcess {
 			;
 
 		// Let's compare the two
+		const lastUpdated = (existingRecord.hasOwnProperty('lastUpdated')) ? existingRecord['lastUpdated'] : '';
+		delete existingRecord['lastUpdated'];
 		const diffInformation = DiffService.areEqual(existingRecord, normalObject);
 
 		// Only if the records weren't equal will we update the database record and store the diff
 		if (diffInformation.areEqual === false) {
+
+			// Check if the record was just updated in the past few minutes and skip adding it if so
+			// This likely means it was just an internal update, because some of our records have different data for the same primary key
+			// and overwrite the data that was just added, rather than having been an actual change from the previous sync run
+			if (lastUpdated) {
+
+				// Get the time the row was last updated and now and convert the difference to minutes
+				const a = new Date(lastUpdated).getTime();
+				const b = new Date(Date.now()).getTime();
+				const timeDiff = (b - a) / 60000
+
+				// If the last update was less than 10 minutes ago, it was likely the internal update, so no need to update
+				if (timeDiff < 10) {
+					return
+				}
+			}
 
 			// Get the unique identifier for this record and table it belongs to
 			const pKey = table.columns.filter((column) =>
@@ -146,6 +164,7 @@ export class ObjectProcess {
 			// Have the new record overwrite the existing one in the database
 			DiffService.addToDiffList(diffInformation.diff, table.tableName, pValue);
 			await this.netxClient.query(possibleNewRecord.query, possibleNewRecord.values);
+
 		}
 	};
 }
