@@ -7,3 +7,6 @@ dams-sync-linux
 dams-sync-macos
 dams-sync-win.exe
 dams-sync.zip
+
+# Ignore the sync logs
+logs
