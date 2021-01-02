@@ -18,7 +18,7 @@ const insertQueryGenerator = (table: TableInformation, object: NormalObject): Qu
 	const onConflictCommand = generateOnConflictCommand(table, columnNamesToInsert);
 
 	// Generate the column string and placeholder
-	const columnString = columnNamesToInsert.join();
+	let columnString = columnNamesToInsert.join();
 	const valuesPlaceholder = values.map((_, index) => `$${index + 1}`).join();
 
 	// Build our insert query for this object
@@ -44,6 +44,10 @@ const insertQueryGenerator = (table: TableInformation, object: NormalObject): Qu
 		}, '');
 
 	// Build our select query for this object
+	if (table.columns.some((column) => column.name === 'lastUpdated')) {
+		columnString += `,"lastUpdated"`
+	}
+
 	const selectQuery = `
 	SELECT ${columnString}
 	FROM "${tableName}"
