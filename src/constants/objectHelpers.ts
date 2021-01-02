@@ -2,6 +2,7 @@ import { ObjectRecord, NormalObject } from '../interfaces/queryResponses';
 import { NetXTables } from '../constants/netXDatabase';
 import FieldHelpers from '../constants/fieldHelpers';
 import { CONSTITUENT_RECORD } from '../constants/names';
+import { ColumnInformation } from '../interfaces/netXDatabaseInterfaces';
 
 
 interface ObjectsForTables {
@@ -40,15 +41,15 @@ const parseRecordToObjects = (or: ObjectRecord): ObjectsForTables => {
 	for (let [fieldName, fieldValue] of Object.entries(or)) {
 
 		// Check if the current field is needed in the main object/media information objects
-		const fieldNeededInMainObject = NetXTables.mainObjectInformation.columns.some((column) => column.name === fieldName);
-		const fieldNeededInMediaInformationObject = NetXTables.mediaInformation.columns.some((column) => column.name === fieldName);
+		const mainColumn = NetXTables.mainObjectInformation.columns.find((column) => column.name === fieldName);
+		const mediaColumn = NetXTables.mediaInformation.columns.find((column) => column.name === fieldName);
 
-		if (fieldNeededInMainObject) {
-			mainInformationObject[fieldName] = fieldValue;
+		if (mainColumn) {
+			mainInformationObject[fieldName] = getCorrectValue(fieldValue, mainColumn);
 		}
 
-		if (fieldNeededInMediaInformationObject) {
-			mediaInformationObject[fieldName] = fieldValue;
+		if (mediaColumn) {
+			mediaInformationObject[fieldName] = getCorrectValue(fieldValue, mediaColumn);
 		}
 
 		// If this is the constituent records field, we know we need it right off the bat. We call a function that iterates through the list and
@@ -70,16 +71,25 @@ const createListOfConstituentRecordObjects = (constituentRecords: ObjectRecord['
 
 		// Check if the current field name is needed in the constituent record object
 		for (let [key, value] of Object.entries(cr)) {
-			const fieldNameNeededInCR = NetXTables.constituentRecords.columns.some((column) => column.name === key);
+			const crColumn = NetXTables.constituentRecords.columns.find((column) => column.name === key);
 
 			// If it is, add it
-			if (fieldNameNeededInCR) {
-				constituentRecordObject[key] = value;
+			if (crColumn) {
+				constituentRecordObject[key] = getCorrectValue(value, crColumn);
 			}
 		}
 
 		return constituentRecordObject;
 	});
+};
+
+const getCorrectValue = (fieldValue: string | number, columnInfo: ColumnInformation) => {
+
+	if (columnInfo.type === 'INTEGER' || columnInfo.type === 'SERIAL') {
+		return parseInt(fieldValue.toString());
+	}
+
+	return fieldValue.toString();
 };
 
 const ObjectHelpers = {
