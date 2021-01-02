@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { detailedDiff, diff as _diff } from "deep-object-diff";
 import { NormalObject } from "../interfaces/queryResponses";
 import { NetXTables } from '../constants/netXDatabase'
@@ -8,6 +9,9 @@ const emptyDiff = { added: {}, deleted: {}, updated: {} };
  * the NetX Intermediate Database, and what currently is in there, for any given record
  */
 export default class DiffService {
+
+	/** Directory to write the differential file to */
+	private static diffDirectory = 'logs';
 
 	/** List holding the previous state of record data */
 	public static previousData: any[] = [];
@@ -40,8 +44,35 @@ export default class DiffService {
 			Object.entries(NetXTables).forEach((entry) => {
 
 				const [_, tableInformation] = entry;
-				DiffService.diffList[tableInformation.tableName] = {};
+				DiffService.diffList[`${tableInformation.tableName}`] = {};
 			});
 		}
 	}
+
+	/** Writes the diff list out to disk */
+	public static writeToFile(): Promise<void> {
+
+		const diffListOutput = JSON.stringify(Object.assign({}, DiffService.diffList), null, 4);
+		const diffFileName = `diff__${(new Date(Date.now()).toISOString())}`;
+		const diffFilePath = `${this.diffDirectory}/${diffFileName}`;
+
+		// Create the diff directory if it doesn't exist
+		if (!fs.existsSync(this.diffDirectory)) {
+			fs.mkdirSync(this.diffDirectory);
+		}
+
+		return new Promise<void>((resolve, reject) => {
+			fs.writeFile(diffFilePath, diffListOutput, (error) => {
+				if (error) {
+					console.log(`An error occurred saving the diff file`, error)
+					reject();
+				}
+
+				else {
+					console.log(`The diff file was successfully saved to ${diffFilePath}`);
+					resolve();
+				}
+			});
+		});
+	};
 };
