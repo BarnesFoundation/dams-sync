@@ -30,7 +30,7 @@ const generateConstituentCalculatedFields = (constituentRecords: ObjectRecord['C
 		if (beginDate) fullConstituent += `${beginDate} `;
 		if (endDate) fullConstituent += `${endDate}`;
 
-		let fullConstituentAndRole = `${fullConstituent} ${role}`;
+		let fullConstituentAndRole = `${fullConstituent}, ${role}`;
 
 		cr['constituentName'] = constituentName;
 		cr['fullConstituent'] = fullConstituent;
@@ -41,7 +41,10 @@ const generateConstituentCalculatedFields = (constituentRecords: ObjectRecord['C
 };
 
 /** Generates the caption for a main object record. The caption is a field made by combining several other fields, including the list of related constituents */
-const generateCaptionForMainObject = (mainInformationObject: { [key: string]: string }, constituentRecords: ObjectRecord['ConstituentRecord']): string => {
+const generateCaptionForMainObject = (
+	mainInformationObject: { [key: string]: string },
+	constituentRecords: ObjectRecord['ConstituentRecord']
+): string => {
 
 	// Get the needed fields from the main object
 	const { title, dated, medium, objectNumber, creditLine } = mainInformationObject;
@@ -57,7 +60,7 @@ const generateCaptionForMainObject = (mainInformationObject: { [key: string]: st
 	// Cascade all the way down adding fields in order
 	crInformation.forEach((cr) => {
 
-		if (cr.firstName) captionString += `${cr.firstName}`;
+		if (cr.firstName) captionString += `${cr.firstName} `;
 		if (cr.lastName) captionString += `${cr.lastName}. `;
 	});
 
@@ -65,7 +68,7 @@ const generateCaptionForMainObject = (mainInformationObject: { [key: string]: st
 	if (dated) captionString += `${dated}, `;
 	if (medium) captionString += `${medium}.`
 
-	captionString += 'The Barnes Foundation, ';
+	captionString += ' The Barnes Foundation, ';
 
 	if (objectNumber) captionString += `${objectNumber}. `;
 	if (creditLine) captionString += `${creditLine}`;
