@@ -13,6 +13,7 @@
 		"**/*.ts"
 	],
 	"exclude": [
-		"./netxQueries.ts"
+		"./netxQueries.ts",
+		"src/test/*"
 	]
 }

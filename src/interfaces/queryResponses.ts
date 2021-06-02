@@ -12,6 +12,6 @@ export interface CollectionPayload {
 
 export type ObjectRecord = NormalObject & { ConstituentRecord?: NormalObject[] };
 
-interface NormalObject {
+export interface NormalObject {
 	[key: string]: string | number,
 }
