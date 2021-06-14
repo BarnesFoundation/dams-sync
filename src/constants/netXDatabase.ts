@@ -39,6 +39,7 @@ export const NetXTables: TablesInformation = {
 			{ name: 'bibliography', type: 'VARCHAR' },
 			{ name: 'dimensions', type: 'VARCHAR' },
 			{ name: 'caption', type: 'VARCHAR' },
+			{ name: 'ImagecreditLine', type: 'VARCHAR', }
 		]
 	},
 
