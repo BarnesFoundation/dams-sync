@@ -66,7 +66,6 @@ FROM
 					ConAltNames cn
 					JOIN Constituents cts ON (
 						cn.ConstituentID = cts.ConstituentID
-						/*AND cts.Active = 1*/
 					)
 					JOIN ConXrefDetails cxd ON (cxd.NameID = cn.AltNameId)
 			) const ON (
@@ -78,13 +77,6 @@ FROM
 		AND conxref1.RoleTypeID = 11
 		AND conxref1.RoleID = 11
 	)
-	/*Constituent */
-	/*INNER JOIN MediaRenditions mr1 ON mm.PrimaryRendID = mr1.RenditionID  
-	 INNER JOIN conxrefs cx1 on cx1.ID = o.objectid AND cx1.TableID = 108
-	 INNER JOIN Roles r1 on r1.RoleID = cx1.RoleID AND R1.RoleTypeID = 1 
-	 INNER JOIN ConXrefDetails cxd1 ON cx1.ConXrefID = cxd1.ConXrefID And CXD1.UnMasked = 1
-	 INNER JOIN ConAltNames cn1 ON cxd1.NameID = cn1.AltNameId
-	 INNER JOIN Constituents cts1 ON cn1.ConstituentID = cts1.ConstituentID 	*/
 	JOIN (
 		SELECT
 			cx1.ID,
@@ -107,8 +99,10 @@ FROM
 				cx1.ConXrefID = conx1.ConXrefID
 				AND conx1.UnMasked = 1
 			)
-	) constit1 on constit1.ID = o.objectid
-	AND constit1.TableID = 108;
+	) constit1 ON (
+		constit1.ID = O.ObjectID
+		AND constit1.TableID = 108
+	);
 
 DECLARE @ObjectID int;
 
