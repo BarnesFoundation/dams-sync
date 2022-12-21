@@ -7,17 +7,26 @@ GO
 SET
 	QUOTED_IDENTIFIER ON
 GO
-	ALTER PROCEDURE [dbo].[SP_BF_feed_onlinecollectionpayload] -- Add the parameters for the stored procedure here
-	AS BEGIN -- SET NOCOUNT ON added to prevent extra result sets FROM
-	-- interfering with SELECT statements.
+	ALTER PROCEDURE [dbo].[SP_BF_feed_onlinecollectionpayload] AS BEGIN;
+
+/**
+ * SET NOCOUNT ON added to prevent extra result sets FROM
+ * interfering with SELECT statements.
+ */
 SET
 	NOCOUNT ON;
 
-CREATE TABLE #temporaryObjectIDs(TemporaryObjectID int)
+CREATE TABLE #temporaryObjectIDs(TemporaryObjectID int, RenditionExists boolean)
+/**
+ The below query inserts objects from the `Objects` table into the temporary table `temporaryObjectIDs`
+ Only objects that have media renditions are retrieved by the below query
+ */
 INSERT INTO
 	#temporaryObjectIDs	
 SELECT
-	DISTINCT O.ObjectID
+	DISTINCT O.ObjectID,
+	-- 1, since these objects do have media renditions
+	1
 FROM
 	Objects O
 	/* Join the Classifications information */
@@ -104,6 +113,34 @@ FROM
 		AND constit1.TableID = 108
 	);
 
+----------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------
+/**
+ The below query inserts objects from the `Objects` table into the temporary table `temporaryObjectIDs`
+ Only Archive objects that have do not have media renditions are retrieved by the below query
+ */
+INSERT INTO
+	#temporaryObjectIDs	
+SELECT
+	DISTINCT O.ObjectID,
+	-- 0, since these objects do not have media renditions
+	0
+FROM
+	Objects O
+WHERE
+	-- This is the DepartmentID that indicates "Archives"
+	O.DepartmentID = '23'
+	/* This below filter query retrieves those Archives that do not have media renditions. */
+	AND O.ObjectID NOT IN (
+		SELECT
+			MediaXrefs.ID
+		FROM
+			MediaXrefs
+	);
+
+/**
+ * Runs the stored procedure `SP_BF_OnlineCollectionPayload` for each TemporaryObjectID in our `temporaryObjectIDs` table
+ */
 DECLARE @ObjectID int;
 
 DECLARE objectCursor CURSOR FOR
