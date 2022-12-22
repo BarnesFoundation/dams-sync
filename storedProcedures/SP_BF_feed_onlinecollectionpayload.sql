@@ -115,6 +115,8 @@ FROM
 
 ----------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------
 /**
  The below query inserts objects from the `Objects` table into the temporary table `temporaryObjectIDs`
  Only Archive objects that have do not have media renditions are retrieved by the below query
@@ -140,18 +142,30 @@ WHERE
 
 /**
  * Runs the stored procedure `SP_BF_OnlineCollectionPayload` for each TemporaryObjectID in our `temporaryObjectIDs` table
+ * which should at this point contain ObjectID's for Media Rendition objects, and Archives
  */
 DECLARE @ObjectID int;
 
+DECLARE @RenditionExists boolean;
+
 DECLARE objectCursor CURSOR FOR
 SELECT
-	TemporaryObjectID
+	TemporaryObjectID,
+	RenditionExists
 FROM
 	#temporaryObjectIDs
 	OPEN objectCursor FETCH NEXT
 FROM
-	objectCursor INTO @ObjectID WHILE @ @FETCH_STATUS = 0 BEGIN EXEC [dbo].[SP_BF_OnlineCollectionPayload] @ObjectID FETCH NEXT
+	objectCursor INTO @ObjectID,
+	@RenditionExists WHILE @ @FETCH_STATUS = 0 BEGIN EXEC IF @RenditionExists = 1 [dbo].[SP_BF_OnlineCollectionPayloadArchives] @ObjectID;
+
+ELSE [dbo].[SP_BF_OnlineCollectionPayload] @ObjectID;
+
+FETCH NEXT
 FROM
-	objectCursor INTO @ObjectID
-END CLOSE objectCursor DEALLOCATE objectCursor
+	objectCursor INTO @ObjectID,
+	@RenditionExists
+END;
+
+CLOSE objectCursor DEALLOCATE objectCursor
 END
