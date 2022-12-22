@@ -157,9 +157,9 @@ FROM
 	OPEN objectCursor FETCH NEXT
 FROM
 	objectCursor INTO @ObjectID,
-	@RenditionExists WHILE @ @FETCH_STATUS = 0 BEGIN EXEC IF @RenditionExists = 1 [dbo].[SP_BF_OnlineCollectionPayloadArchives] @ObjectID;
+	@RenditionExists WHILE @ @FETCH_STATUS = 0 BEGIN EXEC IF @RenditionExists = 1 [dbo].[SP_BF_OnlineCollectionPayload] @ObjectID;
 
-ELSE [dbo].[SP_BF_OnlineCollectionPayload] @ObjectID;
+ELSE [dbo].[SP_BF_OnlineCollectionPayloadArchives] @ObjectID;
 
 FETCH NEXT
 FROM
