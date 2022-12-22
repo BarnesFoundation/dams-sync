@@ -7,61 +7,66 @@ GO
 SET
 	QUOTED_IDENTIFIER ON
 GO
-	-- =============================================
-	-- Author:		<Author,,Name>
-	-- Create date: <Create Date,,>
-	-- Description:	<Description,,>
-	-- =============================================
-	ALTER PROCEDURE [dbo].[SP_BF_OnlineCollectionPayload] -- Add the parameters for the stored procedure here
-	@ObjectID nvarchar(max) AS BEGIN create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(450), Classification nvarchar(64),
-	OnView smallint,
-	BeginDate int,
-	EndDate int,
-	Dated nvarchar(255),
-	Period nvarchar(120),
-	Culture nvarchar(120),
-	Medium nvarchar(max),
-	Dimensions nvarchar(max),
-	ImageCreditLine nvarchar(max),
-	Marks nvarchar(max),
-	Inscriptions nvarchar(max),
-	ExhibitionHistory nvarchar(max),
-	Bibliography nvarchar(max),
-	CopyrightStatus nvarchar(48),
-	CopyrightsTypeID int,
-	CreditLine nvarchar(max),
-	copyright nvarchar(max),
-	ShortDescription nvarchar(max),
-	LongDescription nvarchar(max),
-	VisualDescription nvarchar(max),
-	PublishedProvenance nvarchar(max),
-	EnsembleIndex nvarchar(max),
-	PrimaryImageAltText nvarchar(max),
-	AudioTour nvarchar(max),
-	Site nvarchar(128),
-	Room nvarchar(128),
-	Wall nvarchar(64),
-	HomeLocation nvarchar(512),
-	MediaFile nvarchar(450),
-	MediaView nvarchar(64),
-	MediaDescription nvarchar(max),
-	PublicAccess smallint,
-	ISPrimary smallint,
-	PhotographerName nvarchar(450),
-	MediaRole nvarchar(32),
-	PublicCaption nvarchar(max),
-	RenditionDate nvarchar(19),
-	Technique nvarchar(255),
-	RenditionNumber nvarchar(64)
-) -- SET NOCOUNT ON added to prevent extra result sets from
--- interfering with SELECT statements.
+	ALTER PROCEDURE [dbo].[SP_BF_OnlineCollectionPayload] @ObjectID nvarchar(max) AS BEGIN;
+
+-- Creates our `tempImage` table
+CREATE TABLE #tempImage(
+ObjectID int,
+ObjectNumber nvarchar(64),
+Title nvarchar(450),
+Classification nvarchar(64),
+OnView smallint,
+BeginDate int,
+EndDate int,
+Dated nvarchar(255),
+Period nvarchar(120),
+Culture nvarchar(120),
+Medium nvarchar(max),
+Dimensions nvarchar(max),
+ImageCreditLine nvarchar(max),
+Marks nvarchar(max),
+Inscriptions nvarchar(max),
+ExhibitionHistory nvarchar(max),
+Bibliography nvarchar(max),
+CopyrightStatus nvarchar(48),
+CopyrightsTypeID int,
+CreditLine nvarchar(max),
+copyright nvarchar(max),
+ShortDescription nvarchar(max),
+LongDescription nvarchar(max),
+VisualDescription nvarchar(max),
+PublishedProvenance nvarchar(max),
+EnsembleIndex nvarchar(max),
+PrimaryImageAltText nvarchar(max),
+AudioTour nvarchar(max),
+Site nvarchar(128),
+Room nvarchar(128),
+Wall nvarchar(64),
+HomeLocation nvarchar(512),
+MediaFile nvarchar(450),
+MediaView nvarchar(64),
+MediaDescription nvarchar(max),
+PublicAccess smallint,
+ISPrimary smallint,
+PhotographerName nvarchar(450),
+MediaRole nvarchar(32),
+PublicCaption nvarchar(max),
+RenditionDate nvarchar(19),
+Technique nvarchar(255),
+RenditionNumber nvarchar(64)
+);
+
+/**
+ * SET NOCOUNT ON added to prevent extra result sets FROM
+ * interfering with SELECT statements.
+ */
 SET
 	NOCOUNT ON;
 
--- Insert statements for procedure here
-insert into
-	#tempImage	SELECT distinct
-	O.ObjectID,
+INSERT INTO
+	#tempImage	
+SELECT
+	DISTINCT O.ObjectID,
 	O.ObjectNumber,
 	O.Title,
 	Cs.Classification,
@@ -76,22 +81,22 @@ insert into
 	O.creditLine,
 	O.Markings,
 	O.Inscribed,
-	case
-		when O.Exhibitions IS NOT NULL then '<p>' + REPLACE(
+	CASE
+		WHEN O.Exhibitions IS NOT NULL then '<p>' + REPLACE(
 			O.Exhibitions,
 			char(13) + char(10) + char(13) + char(10),
 			'</p><p>'
 		) + '</p>'
-		else O.Exhibitions
-	end as Exhibitions,
-	case
-		when O.bibliography IS NOT NULL then '<p>' + REPLACE(
+		ELSE O.Exhibitions
+	END AS Exhibitions,
+	CASE
+		WHEN O.bibliography IS NOT NULL then '<p>' + REPLACE(
 			O.bibliography,
 			char(13) + char(10) + char(13) + char(10),
 			'</p><p>'
 		) + '</p>'
-		else O.bibliography
-	end as bibliography,
+		ELSE O.bibliography
+	END AS bibliography,
 	ort.ObjRightsType,
 	obr.ObjRightsTypeID,
 	obr.CreditLineRepro,
@@ -118,120 +123,105 @@ insert into
 	mr.RenditionDate,
 	mr.Technique,
 	mr.RenditionNumber
-from
+FROM
 	Objects O
 	/* Classification */
 	INNER JOIN ClassificationXRefs CXR ON O.ObjectID = CXR.Id
 	INNER JOIN classifications Cs ON Cs.ClassificationID = CXR.ClassificationId
 	/* Period, Culture */
 	INNER JOIN ObjContext Oc ON Oc.ObjectID = O.ObjectID
-	/* CopyrightStatus, coyrightsstatusid, CreditLineReproduction and copyright */
+	/* CopyrightStatus, coyrightsstatusid, CreditLineReproduction AND copyright */
 	INNER JOIN ObjRights obr ON obr.OBJECTID = O.ObjectID
-	INNER JOIN ObjRightsTypes Ort on Ort.ObjRightsTypeID = Obr.ObjRightsTypeID
+	INNER JOIN ObjRightsTypes Ort ON Ort.ObjRightsTypeID = Obr.ObjRightsTypeID
 	/*text Entries - short description, long description, visual description, published provenance,
-	 EnsembleIndex, PrimaryImageAltTxt and AudioTour */
-	LEFT OUTER JOIN TextEntries tes on tes.id = O.ObjectID
-	and tes.Texttypeid = 48
-	LEFT OUTER JOIN TextEntries tel on tel.id = O.ObjectID
-	and tel.Texttypeid = 49
-	LEFT OUTER JOIN TextEntries tev on tev.id = O.ObjectID
-	and tev.Texttypeid = 50
-	LEFT OUTER JOIN TextEntries tep on tep.id = O.ObjectID
-	and tep.Texttypeid = 55
-	LEFT OUTER JOIN TextEntries teei on teei.id = O.ObjectID
-	and teei.Texttypeid = 57
-	LEFT OUTER JOIN TextEntries tepiat on tepiat.id = O.ObjectID
-	and tepiat.Texttypeid = 54
-	LEFT OUTER JOIN TextEntries teat on teat.id = O.ObjectID
-	and teat.Texttypeid = 32
+	 EnsembleIndex, PrimaryImageAltTxt AND AudioTour */
+	LEFT OUTER JOIN TextEntries tes ON tes.id = O.ObjectID
+	AND tes.Texttypeid = 48
+	LEFT OUTER JOIN TextEntries tel ON tel.id = O.ObjectID
+	AND tel.Texttypeid = 49
+	LEFT OUTER JOIN TextEntries tev ON tev.id = O.ObjectID
+	AND tev.Texttypeid = 50
+	LEFT OUTER JOIN TextEntries tep ON tep.id = O.ObjectID
+	AND tep.Texttypeid = 55
+	LEFT OUTER JOIN TextEntries teei ON teei.id = O.ObjectID
+	AND teei.Texttypeid = 57
+	LEFT OUTER JOIN TextEntries tepiat ON tepiat.id = O.ObjectID
+	AND tepiat.Texttypeid = 54
+	LEFT OUTER JOIN TextEntries teat ON teat.id = O.ObjectID
+	AND teat.Texttypeid = 32
 	/* site, room, wall, homelocation */
-	INNER JOIN objcomponents obc on o.objectID = obc.ObjectID
-	INNER JOIN locations l on obc.HomeLocationID = l.LocationID
-	join (
-		select
+	INNER JOIN objcomponents obc ON o.objectID = obc.ObjectID
+	INNER JOIN locations l ON obc.HomeLocationID = l.LocationID
+	JOIN (
+		SELECT
 			mx.TableID,
 			mx.MediaMasterID,
 			conds.ID,
 			mx.PrimaryDisplay
-		from
+		FROM
 			condLineItems cli
-			join conditions conds on (conds.ConditionID = cli.ConditionID)
-			join mediaxrefs mx on (
+			JOIN conditions conds ON (conds.ConditionID = cli.ConditionID)
+			JOIN mediaxrefs mx ON (
 				mx.id = cli.CondLineItemID
-				and mx.tableID = 97
+				AND mx.tableID = 97
 			)
-		union
+		UNION
 		(
-			select
+			SELECT
 				mx.TableID,
 				mx.MediaMasterID,
 				o.objectID,
 				mx.PrimaryDisplay
-			from
+			FROM
 				mediaxrefs mx
-				join Objects o on (
+				JOIN Objects o ON (
 					mx.id = o.ObjectID
-					and mx.tableID = 108
+					AND mx.tableID = 108
 				)
 		)
-	) x on x.ID = o.ObjectID
+	) x ON x.ID = o.ObjectID
 	/* Photographer */
 	INNER JOIN MediaMaster mm On x.MediaMasterID = mm.MediaMasterID
 	INNER JOIN MediaRenditions mr ON (
 		mm.MediaMasterID = mr.MediaMasterID
-		and mm.PrimaryRendID = mr.RenditionID
+		AND mm.PrimaryRendID = mr.RenditionID
 	)
-	left join MediaFiles mf ON (mr.PrimaryFileID = mf.FileID)
-	join (
-		select
+	left JOIN MediaFiles mf ON (mr.PrimaryFileID = mf.FileID)
+	JOIN (
+		SELECT
 			const.DisplayName,
 			r.Role,
 			cx.ID,
 			cx.RoleTypeID,
 			cx.RoleID
-		from
+		FROM
 			ConXrefs cx
-			join Roles r on (r.RoleID = cx.RoleID)
-			join (
-				select
+			JOIN Roles r ON (r.RoleID = cx.RoleID)
+			JOIN (
+				SELECT
 					cts.DisplayName,
 					cxd.ConXrefID,
 					cxd.UnMasked
-				from
+				FROM
 					ConAltNames cn
-					join Constituents cts on (
+					JOIN Constituents cts ON (
 						cn.ConstituentID = cts.ConstituentID
-						/*and cts.Active = 1*/
+						/*AND cts.Active = 1*/
 					)
-					join ConXrefDetails cxd ON (cxd.NameID = cn.AltNameId)
+					JOIN ConXrefDetails cxd ON (cxd.NameID = cn.AltNameId)
 			) const ON (
 				cx.ConXrefID = const.ConXrefID
-				and const.UnMasked = 1
+				AND const.UnMasked = 1
 			)
 	) conxref1 ON (
 		mr.RenditionID = conxref1.ID
-		and conxref1.RoleTypeID = 11
-		and conxref1.RoleID = 11
+		AND conxref1.RoleTypeID = 11
+		AND conxref1.RoleID = 11
 	)
 WHERE
-	O.ObjectID = @ObjectID
-	/** INNER JOIN MediaXRefs mx On mx.ID = o.ObjectID And mx.TableID = 108 and Mx.PrimaryDisplay = 1
-	 INNER JOIN MediaMaster mm On Mx.MediaMasterID = mm.MediaMasterID
-	 INNER JOIN MediaRenditions mr ON mm.MediaMasterID = mr.MediaMasterID
-	 INNER JOIN ConXrefs cx ON mr.RenditionID = cx.ID
-	 and cx.RoleTypeID = 11
-	 and cx.RoleID = 11
-	 INNER JOIN MediaFiles mf ON mr.PrimaryFileID = mf.FileID
-	 INNER JOIN Roles r on r.RoleID = cx.RoleID
-	 INNER JOIN ConXrefDetails cxd ON cx.ConXrefID = cxd.ConXrefID
-	 and cxd.UnMasked = 1
-	 INNER JOIN ConAltNames cn ON cxd.NameID = cn.AltNameId
-	 INNER JOIN Constituents cts ON cn.ConstituentID = cts.ConstituentID
-	 and cts.Active = 1
-	 WHERE
-	 O.ObjectID = @ObjectID * /
-	 /* Select * from #tempImage */
-	DECLARE @return_value nvarchar(max)
+	O.ObjectID = @ObjectID;
+
+DECLARE @return_value nvarchar(max)
 SET
 	@return_value = (
 		SELECT
@@ -293,19 +283,15 @@ SET
     + ']' + '}' 
 	 );
 
-	 --select @return_value 
+	 --SELECT @return_value 
 
-	 create table #tempvar(jsonvalue nvarchar(max));
+	 CREATE TABLE #tempvar(jsonvalue nvarchar(max));
+	 INSERT INTO #tempvar SELECT @return_value;
 
-	 insert into #tempvar select @return_value
-
-	  /* select * from #tempvar */
 	  
 	 /*Delete Existing rows with TextTypeID 67 */
-	 delete from tms.dbo.TextEntries where TextTypeID = 67 and ID = @ObjectID
+	 DELETE FROM tms.dbo.TextEntries where TextTypeID = 67 AND ID = @ObjectID;
 
-	 /*Insert into Textentries */
-
-	 insert into TextEntries (TableID, ID, TextTypeID, TextStatusID, LoginID, EnteredDate, TextEntryHTML, TextEntry)
-	 values (108, @ObjectID, 67, 0, 'dnune', GetDate(), @return_value, @return_value)
-	 End
+	 /*Insert into Textentries */    
+	 INSERT INTO TextEntries (TableID, ID, TextTypeID, TextStatusID, LoginID, EnteredDate, TextEntryHTML, TextEntry)
+	 VALUES (108, @ObjectID, 67, 0, 'dnune', GetDate(), @return_value, @return_value)
