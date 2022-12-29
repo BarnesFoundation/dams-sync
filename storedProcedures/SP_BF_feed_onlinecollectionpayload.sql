@@ -16,7 +16,7 @@ GO
 SET
 	NOCOUNT ON;
 
-CREATE TABLE #temporaryObjectIDs(TemporaryObjectID int, RenditionExists boolean)
+CREATE TABLE #temporaryObjectIDs(TemporaryObjectID int, RenditionExists BIT)
 /**
  The below query inserts objects from the `Objects` table into the temporary table `temporaryObjectIDs`
  Only objects that have media renditions are retrieved by the below query
@@ -146,7 +146,7 @@ WHERE
  */
 DECLARE @ObjectID int;
 
-DECLARE @RenditionExists boolean;
+DECLARE @RenditionExists BIT;
 
 DECLARE objectCursor CURSOR FOR
 SELECT
