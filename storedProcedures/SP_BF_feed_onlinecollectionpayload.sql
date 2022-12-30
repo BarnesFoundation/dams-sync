@@ -144,28 +144,27 @@ WHERE
  * Runs the stored procedure `SP_BF_OnlineCollectionPayload` for each TemporaryObjectID in our `temporaryObjectIDs` table
  * which should at this point contain ObjectID's for Media Rendition objects, and Archives
  */
-DECLARE @ObjectID int;
+DECLARE @ObjectID INT;
 
 DECLARE @RenditionExists BIT;
 
 DECLARE objectCursor CURSOR FOR
+
 SELECT
 	TemporaryObjectID,
 	RenditionExists
 FROM
-	#temporaryObjectIDs
+	#temporaryObjectIDs;
 	OPEN objectCursor FETCH NEXT
 FROM
 	objectCursor INTO @ObjectID,
-	@RenditionExists WHILE @ @FETCH_STATUS = 0 BEGIN EXEC IF @RenditionExists = 1 [dbo].[SP_BF_OnlineCollectionPayload] @ObjectID;
-
-ELSE [dbo].[SP_BF_OnlineCollectionPayloadArchives] @ObjectID;
-
-FETCH NEXT
+	@RenditionExists WHILE @@FETCH_STATUS = 0 
+	BEGIN 
+	IF @RenditionExists = 1 EXEC [dbo].[SP_BF_OnlineCollectionPayload] @ObjectID;
+	ELSE EXEC [dbo].[SP_BF_OnlineCollectionPayloadArchives] @ObjectID FETCH NEXT
 FROM
 	objectCursor INTO @ObjectID,
 	@RenditionExists
 END;
 
-CLOSE objectCursor DEALLOCATE objectCursor
-END
+CLOSE objectCursor DEALLOCATE objectCursor;
