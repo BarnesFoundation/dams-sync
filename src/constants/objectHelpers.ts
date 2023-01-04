@@ -58,7 +58,11 @@ const parseRecordToObjects = (or: ObjectRecord): ObjectsForTables => {
 		}
 	}
 
-	return { mainInformationObject, constituentRecordsList, mediaInformationObject };
+	return {
+		mainInformationObject,
+		constituentRecordsList, 
+		mediaInformationObject,
+	};
 };
 
 /** Takes the list of constituent records and transforms them by trimming out any unneeded fields that were included in the object */
