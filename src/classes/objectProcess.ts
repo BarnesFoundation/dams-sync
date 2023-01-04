@@ -6,6 +6,14 @@ import QueryHelpers from '../constants/queryHelpers';
 import ObjectHelpers from '../constants/objectHelpers';
 import { OBJECT_RECORD } from '../constants/names';
 
+const NEWLINE_RETURN_TAB_REGEX = /[\n\r\t]/g;
+
+const {
+	mainObjectInformation: tableMainObjectInformation,
+	mediaInformation: tableMediaInformation,
+	constituentRecords: tableConstituentRecords,
+	objectConstituentMappings: tableObjectConstituentMappings,
+} = NetXTables;
 
 export class ObjectProcess {
 
@@ -38,48 +46,40 @@ export class ObjectProcess {
 			WHERE ID = ${this.objectId} 
 			AND TextTypeId = 67`;
 
-			// Execute the query
+			// Execute the query to get the text entry - which is a JSON string and parse it
 			const recordset = (await this.tmsCon.executeQuery(collectionPayloadQuery)).recordset as CollectionPayloadTextEntry[];
+			const cpTextEntry = recordset[0].TextEntry.replace(NEWLINE_RETURN_TAB_REGEX, '');
 
-			// Get the text entry - which is a JSON string and parse it	
-			const cpTextEntry = recordset[0].TextEntry.replace(/[\n\r\t]/g, '');
-
-			let cp;
 			try {
-				cp = JSON.parse(cpTextEntry) as CollectionPayload;
+				const cp = JSON.parse(cpTextEntry) as CollectionPayload;
+
+				// Iterate through each object record provided in the text entry
+				for (let i = 0; i < cp[OBJECT_RECORD].length; i++) {
+
+					// Add it to the NetX intermediate database
+					const or = cp[OBJECT_RECORD][i];
+					await this.addObjectRecordToNetX(or);
+				}
 			}
 
 			catch (error) {
-				console.log(`Encountered an error parsing JSON. Offending object was ${this.objectId}`);
-				process.exit(0);
+				console.log(`Encountered an error parsing JSON. Offending Object ID was ${this.objectId}`);
+			} finally {
+				// Now that we've finished everything - release the client
+				this.netxClient.release();
+				resolve('');
 			}
-
-			// Iterate through each object record provided in the text entry
-			for (let i = 0; i < cp[OBJECT_RECORD].length; i++) {
-
-				// Add it to the NetX intermediate database
-				const or = cp[OBJECT_RECORD][i];
-				await this.addObjectRecordToNetX(or);
-			}
-
-			// Now that we've finished everything - release the client
-			this.netxClient.release();
-			resolve('');
 
 			// Inform that the batch this process belongs to has completed
-			if (this.processNumber > 0 && this.processNumber % 99 == 0) console.log(`Completed Batch Number ${this.batchNumber}`);
+			if (this.processNumber > 0 && this.processNumber % 99 == 0) {
+				console.log(`Completed Batch Number ${this.batchNumber}`);
+			}
 		});
 	}
 
 	/** Performs the necessary functions in order to prepate and add an object to NetX database */
 	private async addObjectRecordToNetX(or: ObjectRecord) {
 
-		const {
-			mainObjectInformation,
-			mediaInformation,
-			constituentRecords,
-			objectConstituentMappings,
-		} = NetXTables;
 		const {
 			mainInformationObject,
 			mediaInformationObject,
@@ -90,7 +90,7 @@ export class ObjectProcess {
 		const {
 			query: moQuery,
 			values: moValues
-		} = QueryHelpers.insertQueryGenerator(mainObjectInformation, mainInformationObject);
+		} = QueryHelpers.insertQueryGenerator(tableMainObjectInformation, mainInformationObject);
 		await this.netxClient.query(moQuery, moValues);
 
 		// Add each constituent record
@@ -98,14 +98,14 @@ export class ObjectProcess {
 			const cr = constituentRecordsList[i];
 
 			// Add the constituent record row
-			const { query: crQuery, values: crValues } = QueryHelpers.insertQueryGenerator(constituentRecords, cr);
+			const { query: crQuery, values: crValues } = QueryHelpers.insertQueryGenerator(tableConstituentRecords, cr);
 			await this.netxClient.query(crQuery, crValues);
 
 			// Add the mapping between the main object and its constituents
 			const {
 				query: mapQuery,
 				values: mapValues
-			} = QueryHelpers.insertQueryGenerator(objectConstituentMappings, {
+			} = QueryHelpers.insertQueryGenerator(tableObjectConstituentMappings, {
 				constituentRecordId: cr.constituentID,
 				objectId: or.objectId,
 			});
@@ -115,7 +115,6 @@ export class ObjectProcess {
 				console.log(`An error occurred doing mapping`, error);
 				console.log(mapQuery);
 				console.log(mapValues);
-				process.exit(0);
 			}
 		}
 
@@ -123,7 +122,7 @@ export class ObjectProcess {
 		const {
 			query: miQuery,
 			values: miValues,
-		} = QueryHelpers.insertQueryGenerator(mediaInformation, mediaInformationObject);
+		} = QueryHelpers.insertQueryGenerator(tableMediaInformation, mediaInformationObject);
 		await this.netxClient.query(miQuery, miValues);
 	}
 }
