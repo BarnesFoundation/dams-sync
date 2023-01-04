@@ -37,7 +37,7 @@ export class SQLConnection {
 
 		try {
 			// Set connection to mssql
-			if (this.type == MSSQL) {
+			if (this.type === MSSQL) {
 				this.connection = await mssql.connect({
 					user: this.user,
 					password: this.password,
