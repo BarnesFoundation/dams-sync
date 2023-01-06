@@ -16,10 +16,10 @@ const createObjectsForTables = (or: ObjectRecord): ObjectsForTables => {
 	let { mainInformationObject, constituentRecordsList, mediaInformationObject } = parseRecordToObjects(or);
 
 	// Now that we've created each needed object -- the objects require some calculated fields
-	mainInformationObject['caption'] = FieldHelpers.generateCaptionForMainObject(mainInformationObject, constituentRecordsList);
-
-	// Add the calculated fields for constituent records
-	constituentRecordsList = FieldHelpers.generateConstituentCalculatedFields(constituentRecordsList);
+	if (constituentRecordsList) {
+		mainInformationObject['caption'] = FieldHelpers.generateCaptionForMainObject(mainInformationObject, constituentRecordsList);
+		constituentRecordsList = FieldHelpers.generateConstituentCalculatedFields(constituentRecordsList);
+	}
 
 	return { mainInformationObject, constituentRecordsList, mediaInformationObject };
 };
@@ -56,11 +56,19 @@ const parseRecordToObjects = (or: ObjectRecord): ObjectsForTables => {
 		if (fieldName === CONSTITUENT_RECORD) {
 			constituentRecordsList = createListOfConstituentRecordObjects(or.ConstituentRecord)
 		}
+
+		// Existince of the `renditionNumber` field in the `mediaInformationObject` will determine
+		// for us if this is a normal media object, or an archive, which has no media
+		if (mediaInformationObject.hasOwnProperty('renditionNumber')) {
+			mainInformationObject['objectType'] = 'media';
+		} else {
+			mainInformationObject['objectType'] = 'archive';
+		}
 	}
 
 	return {
 		mainInformationObject,
-		constituentRecordsList, 
+		constituentRecordsList,
 		mediaInformationObject,
 	};
 };
