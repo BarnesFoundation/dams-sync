@@ -50,9 +50,9 @@ SET
 								replace(
 									replace(
 										Title,
-										'\' , '\\'), CHAR(13)+CHAR(10), '\n '), ' json ') + '",','')
+										'\' , '\\'), CHAR(13)+CHAR(10), '\n '), 'json') + '",','')
 		+ COALESCE('"dated":" ' + Dated + '",','')
-		+ COALESCE('"description":" ' + dbo.fn_String_Escape(replace(replace(COALESCE(Description, ''), '\' , '\\'), CHAR(13)+CHAR(10), '\n '), ' json ') + '"','')
+		+ COALESCE('"description":" ' + dbo.fn_String_Escape(replace(replace(COALESCE(Description, ''), '\' , '\\'), CHAR(13)+CHAR(10), '\n '), 'json') + '"','')
 		 + '}' 
     FROM #tempObjects
     FOR XML PATH(''), TYPE).value('.', 'nvarchar(MAX)'),1,1,'')
