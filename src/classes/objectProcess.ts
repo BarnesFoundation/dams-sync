@@ -48,7 +48,7 @@ export class ObjectProcess {
 
 			// Execute the query to get the text entry - which is a JSON string and parse it
 			const recordset = (await this.tmsCon.executeQuery(collectionPayloadQuery)).recordset as CollectionPayloadTextEntry[];
-			const cpTextEntry = recordset[0].TextEntry.replace(NEWLINE_RETURN_TAB_REGEX, '');
+			const cpTextEntry = recordset[0]?.TextEntry.replace(NEWLINE_RETURN_TAB_REGEX, '');
 
 			try {
 				const cp = JSON.parse(cpTextEntry) as CollectionPayload;
@@ -93,37 +93,43 @@ export class ObjectProcess {
 		} = QueryHelpers.insertQueryGenerator(tableMainObjectInformation, mainInformationObject);
 		await this.netxClient.query(moQuery, moValues);
 
-		// Add each constituent record
-		for (let i = 0; i < constituentRecordsList.length; i++) {
-			const cr = constituentRecordsList[i];
+		// Add each constituent record in the list. The constituent record list will not exist
+		// for records that are archives records, hence our check for truthyness here
+		if (constituentRecordsList) {
+			for (let i = 0; i < constituentRecordsList.length; i++) {
+				const cr = constituentRecordsList[i];
 
-			// Add the constituent record row
-			const { query: crQuery, values: crValues } = QueryHelpers.insertQueryGenerator(tableConstituentRecords, cr);
-			await this.netxClient.query(crQuery, crValues);
+				// Add the constituent record row
+				const { query: crQuery, values: crValues } = QueryHelpers.insertQueryGenerator(tableConstituentRecords, cr);
+				await this.netxClient.query(crQuery, crValues);
 
-			// Add the mapping between the main object and its constituents
-			const {
-				query: mapQuery,
-				values: mapValues
-			} = QueryHelpers.insertQueryGenerator(tableObjectConstituentMappings, {
-				constituentRecordId: cr.constituentID,
-				objectId: or.objectId,
-			});
+				// Add the mapping between the main object and its constituents
+				const {
+					query: mapQuery,
+					values: mapValues
+				} = QueryHelpers.insertQueryGenerator(tableObjectConstituentMappings, {
+					constituentRecordId: cr.constituentID,
+					objectId: or.objectId,
+				});
 
-			try { await this.netxClient.query(mapQuery, mapValues); }
-			catch (error) {
-				console.log(`An error occurred doing mapping`, error);
-				console.log(mapQuery);
-				console.log(mapValues);
+				try { await this.netxClient.query(mapQuery, mapValues); }
+				catch (error) {
+					console.log(`An error occurred doing mapping`, error);
+					console.log(mapQuery);
+					console.log(mapValues);
+				}
 			}
 		}
 
-		// Add media information record
-		const {
-			query: miQuery,
-			values: miValues,
-		} = QueryHelpers.insertQueryGenerator(tableMediaInformation, mediaInformationObject);
-		await this.netxClient.query(miQuery, miValues);
+		// Add media information record only if the `renditionNumber` exists for the object
+		// which will not be true for archive type objects, as they have no rendition number nor media data
+		if (mediaInformationObject.hasOwnProperty(`renditionNumber`)) {
+			const {
+				query: miQuery,
+				values: miValues,
+			} = QueryHelpers.insertQueryGenerator(tableMediaInformation, mediaInformationObject);
+			await this.netxClient.query(miQuery, miValues);
+		}
 	}
 }
 
