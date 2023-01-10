@@ -122,9 +122,9 @@ export class ObjectProcess {
 		}
 
 		// Add media information record only if the `renditionNumber` exists for the object
-		// and the object type is `media`, as both object types will now have rendition numbers
-		// but only media types have actual valid media information
-		if (mainInformationObject.objectType === MEDIA_TYPE && mediaInformationObject.renditionNumber) {
+		// as both object types `archive` and `media` will now have rendition numbers
+		// but only `media` records will have a full-set of media information
+		if (mediaInformationObject.renditionNumber) {
 			const {
 				query: miQuery,
 				values: miValues,
