@@ -3,7 +3,7 @@ import { SQLConnection } from './sql';
 import { NetXTables } from '../constants/netXDatabase';
 import { PoolClient } from 'pg';
 import QueryHelpers from '../constants/queryHelpers';
-import ObjectHelpers from '../constants/objectHelpers';
+import ObjectHelpers, { ARCHIVE_TYPE, MEDIA_TYPE } from '../constants/objectHelpers';
 import { OBJECT_RECORD } from '../constants/names';
 
 const NEWLINE_RETURN_TAB_REGEX = /[\n\r\t]/g;
@@ -122,8 +122,9 @@ export class ObjectProcess {
 		}
 
 		// Add media information record only if the `renditionNumber` exists for the object
-		// which will not be true for archive type objects, as they have no rendition number nor media data
-		if (mediaInformationObject.hasOwnProperty(`renditionNumber`)) {
+		// and the object type is `media`, as both object types will now have rendition numbers
+		// but only media types have actual valid media information
+		if (mainInformationObject.objectType === MEDIA_TYPE && mediaInformationObject.renditionNumber) {
 			const {
 				query: miQuery,
 				values: miValues,

@@ -3,12 +3,14 @@ import { NetXTables } from '../constants/netXDatabase';
 import FieldHelpers from '../constants/fieldHelpers';
 import { CONSTITUENT_RECORD } from '../constants/names';
 
-
 interface ObjectsForTables {
 	mainInformationObject: { [key: string]: any },
 	mediaInformationObject: { [key: string]: any },
 	constituentRecordsList: { [key: string]: any }[]
 }
+
+export const ARCHIVE_TYPE = 'archive';
+export const MEDIA_TYPE = 'media';
 
 /** Takes an object record returns the needed object records for each table  */
 const createObjectsForTables = (or: ObjectRecord): ObjectsForTables => {
@@ -36,6 +38,9 @@ const parseRecordToObjects = (or: ObjectRecord): ObjectsForTables => {
 	const mediaInformationObject = {};
 	let constituentRecordsList: ObjectRecord['ConstituentRecord'];
 
+	// Existence of the `renditionNumber` in the object record determined if this is a media or archive type
+	const determinedObjectType = or.hasOwnProperty('renditionNumber') ? MEDIA_TYPE : ARCHIVE_TYPE;
+
 	// Get the field names and values -- i.e. the eventual column names, and values for this object
 	for (let [fieldName, fieldValue] of Object.entries(or)) {
 
@@ -51,19 +56,18 @@ const parseRecordToObjects = (or: ObjectRecord): ObjectsForTables => {
 			mediaInformationObject[fieldName] = fieldValue;
 		}
 
-		// If this is the constituent records field, we know we need it right off the bat. We call a function that iterates through the list and
-		// returns to us the normalized objects needed for insertion to the database
+		// If this is the constituent records field, we know we need it right off the bat. 
+		// We call a function that iterates through the list and returns to us the normalized objects needed for insertion to the database
 		if (fieldName === CONSTITUENT_RECORD) {
 			constituentRecordsList = createListOfConstituentRecordObjects(or.ConstituentRecord)
 		}
+	}
 
-		// Existince of the `renditionNumber` field in the `mediaInformationObject` will determine
-		// for us if this is a normal media object, or an archive, which has no media
-		if (mediaInformationObject.hasOwnProperty('renditionNumber')) {
-			mainInformationObject['objectType'] = 'media';
-		} else {
-			mainInformationObject['objectType'] = 'archive';
-		}
+	// We need to store the determined object type for this record and
+	// if it's an `archive` type, we'll give it a simulated rendition number
+	mainInformationObject['objectType'] = determinedObjectType;
+	if (determinedObjectType === ARCHIVE_TYPE) {
+		mediaInformationObject['renditionNumber'] = mainInformationObject['objectId']
 	}
 
 	return {
