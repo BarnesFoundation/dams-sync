@@ -64,10 +64,10 @@ const parseRecordToObjects = (or: ObjectRecord): ObjectsForTables => {
 	}
 
 	// We need to store the determined object type for this record and
-	// if it's an `archive` type, we'll give it a simulated rendition number
+	// if it's an `archive` type, we'll give it a simulated rendition number using the object number
 	mainInformationObject['objectType'] = determinedObjectType;
 	if (determinedObjectType === ARCHIVE_TYPE) {
-		mediaInformationObject['renditionNumber'] = mainInformationObject['objectId']
+		mediaInformationObject['renditionNumber'] = mainInformationObject['objectNumber']
 	}
 
 	return {
