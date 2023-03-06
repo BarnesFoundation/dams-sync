@@ -46,32 +46,42 @@ export class ObjectProcess {
 			WHERE ID = ${this.objectId} 
 			AND TextTypeId = 67`;
 
-			// Execute the query to get the text entry - which is a JSON string and parse it
-			const recordset = (await this.tmsCon.executeQuery(collectionPayloadQuery)).recordset as CollectionPayloadTextEntry[];
-			const cpTextEntry = recordset[0]?.TextEntry.replace(NEWLINE_RETURN_TAB_REGEX, '');
+			// Execute the query to get the text entry
+			const queryResult = await this.tmsCon.executeQuery(collectionPayloadQuery);
+			const recordSet = queryResult.recordset as CollectionPayloadTextEntry[];
+			const textEntryValue = recordSet[0]?.TextEntry;
+
+			if (Boolean(textEntryValue) === false) {
+				console.warn(`No "TextEntry" data available for Object ID "${this.objectId}"`, textEntryValue);
+				return resolve('');
+			}
+
+			const cpTextEntry = textEntryValue.replace(NEWLINE_RETURN_TAB_REGEX, '');
 
 			try {
-				const cp = JSON.parse(cpTextEntry) as CollectionPayload;
+				const parsedCollectionPayload = JSON.parse(cpTextEntry) as CollectionPayload;
+				for (let i = 0; i < parsedCollectionPayload[OBJECT_RECORD].length; i++) {
 
-				// Iterate through each object record provided in the text entry
-				for (let i = 0; i < cp[OBJECT_RECORD].length; i++) {
-
-					// Add it to the NetX intermediate database
-					const or = cp[OBJECT_RECORD][i];
-					await this.addObjectRecordToNetX(or);
+					// Add the parsed record to the NetX intermediate database
+					const objectRecord = parsedCollectionPayload[OBJECT_RECORD][i];
+					await this.addObjectRecordToNetX(objectRecord);
 				}
 			}
 
 			catch (error) {
-				console.log(`Encountered an error parsing JSON. Offending Object ID was ${this.objectId}`);
-			} finally {
-				// Now that we've finished everything - release the client
-				this.netxClient.release();
-				resolve('');
-			}
+				if (error instanceof SyntaxError) {
+					console.error(`Encountered an error parsing JSON. Object ID was "${this.objectId}"`);
+				} else {
+					console.error(`Encountered error during addition of object record to NetX Intermediat Database. Object ID was "${this.objectId}"`, error);
+				}
+			} 
+
+			// Now that we've finished everything - release the client
+			this.netxClient.release();
+			resolve('');
 
 			// Inform that the batch this process belongs to has completed
-			if (this.processNumber > 0 && this.processNumber % 99 == 0) {
+			if (this.processNumber > 0 && this.processNumber % 99 === 0) {
 				console.log(`Completed Batch Number ${this.batchNumber}`);
 			}
 		});

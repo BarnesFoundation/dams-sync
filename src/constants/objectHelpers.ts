@@ -38,7 +38,7 @@ const parseRecordToObjects = (or: ObjectRecord): ObjectsForTables => {
 	const mediaInformationObject = {};
 	let constituentRecordsList: ObjectRecord['ConstituentRecord'];
 
-	// Existence of the `renditionNumber` in the object record determined if this is a media or archive type
+	// Existence of the `renditionNumber` in the object record determines if this is a media or archive type
 	const determinedObjectType = or.hasOwnProperty('renditionNumber') ? MEDIA_TYPE : ARCHIVE_TYPE;
 
 	// Get the field names and values -- i.e. the eventual column names, and values for this object
@@ -67,7 +67,7 @@ const parseRecordToObjects = (or: ObjectRecord): ObjectsForTables => {
 	// if it's an `archive` type, we'll give it a simulated rendition number using the object number
 	mainInformationObject['objectType'] = determinedObjectType;
 	if (determinedObjectType === ARCHIVE_TYPE) {
-		mediaInformationObject['renditionNumber'] = mainInformationObject['objectNumber']
+		mediaInformationObject['renditionNumber'] = formatPSV(mainInformationObject['objectNumber'])
 	}
 
 	return {
@@ -97,6 +97,12 @@ const createListOfConstituentRecordObjects = (constituentRecords: ObjectRecord['
 		return constituentRecordObject;
 	});
 };
+
+/** Formats a period-separated value by replacing those periods with dashes */
+const formatPSV = (value: string) => {
+	const formatted = value.replace(/\./g,'-')
+	return formatted;
+}
 
 const ObjectHelpers = {
 	createObjectsForTables
