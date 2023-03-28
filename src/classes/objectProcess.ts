@@ -44,7 +44,8 @@ export class ObjectProcess {
 			SELECT TextEntry 
 			FROM TextEntries 
 			WHERE ID = ${this.objectId} 
-			AND TextTypeId = 67`;
+			AND TextTypeId = 67
+			AND TextEntry IS NOT NULL`;
 
 			// Execute the query to get the text entry
 			const queryResult = await this.tmsCon.executeQuery(collectionPayloadQuery);
