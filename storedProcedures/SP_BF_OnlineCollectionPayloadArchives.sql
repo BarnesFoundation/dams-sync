@@ -28,13 +28,19 @@ SET
 INSERT INTO
 	#tempObjects	
 SELECT
-	DISTINCT O.ObjectID,
-	O.ObjectNumber,
-	O.Title,
-	O.Dated,
-	O.Description
+    DISTINCT O.ObjectID,
+    O.ObjectNumber,
+    OT.Title,
+    O.Dated,
+    O.Description
 FROM
-	Objects O
+    Objects O
+INNER JOIN (
+	SELECT Title, ObjectID 
+	FROM ObjTitles 
+	WHERE ObjTitles.DisplayOrder = 1
+	) OT
+	ON O.ObjectID = OT.ObjectID
 WHERE
 	O.ObjectID = @ObjectID;
 
