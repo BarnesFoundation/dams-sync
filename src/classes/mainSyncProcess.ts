@@ -17,10 +17,13 @@ export class MainSyncProcess {
 	private async getCollectionObjectIDs(): Promise<CollectionObjectIDs> {
 
 		// Query to get count of objects we'll end up working with - 67 is the type for the text type
+		// We want to avoid pulling non-existent text entry values 
 		const objectIdQuery = `
 			SELECT ID 
 			FROM TextEntries 
-			WHERE TextTypeId = 67`;
+			WHERE TextTypeId = 67
+			AND TextEntry IS NOT NULL
+			AND TextEntry != ''`;
 
 		// From knowledge of the database - we have around 7622 objects we will work with - get the exact count to make sure
 		const recordset = (await this.tmsCon.executeQuery(objectIdQuery)).recordset as ObjectID[];
@@ -54,7 +57,7 @@ export class MainSyncProcess {
 		const { recordset, count } = await this.getCollectionObjectIDs();
 
 		// Set up batches of object retrieval to run
-		const parallelExecutionLimit = 100;
+		const parallelExecutionLimit = 75;
 		const numberOfBatches = Math.ceil(count / parallelExecutionLimit);
 
 		console.log(`There will be ${numberOfBatches} batches of ${parallelExecutionLimit} executions each`);
