@@ -94,7 +94,8 @@ export class SQLConnection {
 		}
 
 		catch (error) {
-			console.log(`An error occurred running the provided query on the ${this.type} database`, error);
+			console.log(`An error occurred running the provided query on the ${this.type} database`, query);
+			console.log(error);
 		}
 	}
 
