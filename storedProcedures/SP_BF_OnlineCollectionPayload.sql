@@ -6,16 +6,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-
--- =============================================
--- Author:		<Author,,Name>
--- Create date: <Create Date,,>
--- Description:	<Description,,>
--- =============================================
 ALTER PROCEDURE [dbo].[SP_BF_OnlineCollectionPayload] 
-	-- Add the parameters for the stored procedure here
 	   @ObjectID nvarchar(max) 
 AS
 BEGIN
@@ -35,7 +26,7 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
 	SET NOCOUNT ON;
     -- Insert statements for procedure here
 	insert into #tempImage	SELECT distinct
-	O.ObjectID, O.ObjectNumber, O.Title, Cs.Classification, O.OnView, O.DateBegin, O.DateEnd, O.Dated, Oc.Period, Oc.Culture, 
+	O.ObjectID, O.ObjectNumber, OT.Title, Cs.Classification, O.OnView, O.DateBegin, O.DateEnd, O.Dated, Oc.Period, Oc.Culture, 
 	O.Medium, O.Dimensions, O.creditLine, O.Markings, O.Inscribed, 
 	case  when O.Exhibitions IS NOT NULL
 	        then '<p>' + REPLACE(O.Exhibitions,char(13)+char(10)+char(13)+char(10),'</p><p>') + '</p>'
@@ -48,6 +39,13 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
 	teat.TextEntryHTML, l.site, l.Room, l.UnitType, l.LocationString, mf.FileName , mm.MediaView, mm.Description, mm.PublicAccess,
 	x.PrimaryDisplay, conxref1.DisplayName, conxref1.Role, mm.PublicCaption, mr.RenditionDate, mr.Technique, mr.RenditionNumber
 	from Objects O 
+	/** Object Titles */
+	INNER JOIN (
+	SELECT Title, ObjectID 
+	FROM ObjTitles 
+	WHERE ObjTitles.DisplayOrder = 1
+	) OT
+	ON O.ObjectID = OT.ObjectID
 	/* Classification */
 	INNER JOIN ClassificationXRefs CXR ON O.ObjectID = CXR.Id
     INNER JOIN classifications Cs ON Cs.ClassificationID = CXR.ClassificationId
@@ -95,9 +93,8 @@ join (select const.DisplayName,r.Role, cx.ID,cx.RoleTypeID,cx.RoleID  from ConXr
 	
 
 	
-	/*INNER JOIN MediaXRefs mx On mx.ID = o.ObjectID And mx.TableID = 108 /*and Mx.PrimaryDisplay = 1*/
 	/* Photographer */	
-    INNER JOIN MediaMaster mm On Mx.MediaMasterID = mm.MediaMasterID 
+INNER JOIN MediaMaster mm On Mx.MediaMasterID = mm.MediaMasterID 
 INNER JOIN MediaRenditions mr ON mm.MediaMasterID = mr.MediaMasterID
 INNER JOIN ConXrefs cx ON  mr.RenditionID = cx.ID and cx.RoleTypeID = 11 and cx.RoleID = 11
 INNER JOIN MediaFiles mf ON mr.PrimaryFileID = mf.FileID
@@ -106,7 +103,6 @@ INNER JOIN ConXrefDetails cxd ON cx.ConXrefID = cxd.ConXrefID and cxd.UnMasked =
 INNER JOIN ConAltNames cn ON cxd.NameID = cn.AltNameId
 INNER JOIN Constituents cts ON cn.ConstituentID = cts.ConstituentID and cts.Active = 1 
 	 WHERE O.ObjectID = @ObjectID */
-	 /* Select * from #tempImage */
 
 	DECLARE	@return_value nvarchar(max)
 
@@ -166,19 +162,14 @@ INNER JOIN Constituents cts ON cn.ConstituentID = cts.ConstituentID and cts.Acti
     + ']' + '}' 
 	 );
 
-	 --select @return_value 
-
 	 create table #tempvar(jsonvalue nvarchar(max));
 
 	 insert into #tempvar select @return_value
 
-	  /* select * from #tempvar */
-	  
 	 /*Delete Existing rows with TextTypeID 67 */
 	 delete from tms.dbo.TextEntries where TextTypeID = 67 and ID = @ObjectID
 
 	 /*Insert into Textentries */
-
 	 insert into TextEntries (TableID, ID, TextTypeID, TextStatusID, LoginID, EnteredDate, TextEntryHTML, TextEntry)
 	 values (108, @ObjectID, 67, 0, 'dnune', GetDate(), @return_value, @return_value)
 	 End
