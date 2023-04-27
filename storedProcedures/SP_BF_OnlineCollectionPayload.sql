@@ -26,7 +26,7 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
 	SET NOCOUNT ON;
     -- Insert statements for procedure here
 	insert into #tempImage	SELECT distinct
-	O.ObjectID, O.ObjectNumber, O.Title, Cs.Classification, O.OnView, O.DateBegin, O.DateEnd, O.Dated, Oc.Period, Oc.Culture, 
+	O.ObjectID, O.ObjectNumber, OT.Title, Cs.Classification, O.OnView, O.DateBegin, O.DateEnd, O.Dated, Oc.Period, Oc.Culture, 
 	O.Medium, O.Dimensions, O.creditLine, O.Markings, O.Inscribed, 
 	case  when O.Exhibitions IS NOT NULL
 	        then '<p>' + REPLACE(O.Exhibitions,char(13)+char(10)+char(13)+char(10),'</p><p>') + '</p>'
@@ -39,6 +39,13 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
 	teat.TextEntryHTML, l.site, l.Room, l.UnitType, l.LocationString, mf.FileName , mm.MediaView, mm.Description, mm.PublicAccess,
 	x.PrimaryDisplay, conxref1.DisplayName, conxref1.Role, mm.PublicCaption, mr.RenditionDate, mr.Technique, mr.RenditionNumber
 	from Objects O 
+	/** Object Titles */
+	INNER JOIN (
+	SELECT Title, ObjectID 
+	FROM ObjTitles 
+	WHERE ObjTitles.DisplayOrder = 1
+	) OT
+	ON O.ObjectID = OT.ObjectID
 	/* Classification */
 	INNER JOIN ClassificationXRefs CXR ON O.ObjectID = CXR.Id
     INNER JOIN classifications Cs ON Cs.ClassificationID = CXR.ClassificationId

@@ -44,7 +44,8 @@ export class ObjectProcess {
 			SELECT TextEntry 
 			FROM TextEntries 
 			WHERE ID = ${this.objectId} 
-			AND TextTypeId = 67`;
+			AND TextTypeId = 67
+			AND TextEntry IS NOT NULL`;
 
 			// Execute the query to get the text entry
 			const queryResult = await this.tmsCon.executeQuery(collectionPayloadQuery);
@@ -81,13 +82,11 @@ export class ObjectProcess {
 			resolve('');
 
 			// Inform that the batch this process belongs to has completed
-			if (this.processNumber > 0 && this.processNumber % 99 === 0) {
-				console.log(`Completed Batch Number ${this.batchNumber}`);
-			}
+			console.log(`Completed Batch Number ${this.batchNumber} Process Number ${this.processNumber}`);
 		});
 	}
 
-	/** Performs the necessary functions in order to prepate and add an object to NetX database */
+	/** Performs the necessary functions in order to prepate and add an object to NetX database */ 
 	private async addObjectRecordToNetX(or: ObjectRecord) {
 
 		const {
