@@ -82,13 +82,11 @@ export class ObjectProcess {
 			resolve('');
 
 			// Inform that the batch this process belongs to has completed
-			if (this.processNumber > 0 && this.processNumber % 99 === 0) {
-				console.log(`Completed Batch Number ${this.batchNumber}`);
-			}
+			console.log(`Completed Batch Number ${this.batchNumber} Process Number ${this.processNumber}`);
 		});
 	}
 
-	/** Performs the necessary functions in order to prepate and add an object to NetX database */
+	/** Performs the necessary functions in order to prepate and add an object to NetX database */ 
 	private async addObjectRecordToNetX(or: ObjectRecord) {
 
 		const {
