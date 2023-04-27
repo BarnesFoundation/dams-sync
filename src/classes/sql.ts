@@ -37,7 +37,7 @@ export class SQLConnection {
 
 		try {
 			// Set connection to mssql
-			if (this.type == MSSQL) {
+			if (this.type === MSSQL) {
 				this.connection = await mssql.connect({
 					user: this.user,
 					password: this.password,
@@ -94,7 +94,8 @@ export class SQLConnection {
 		}
 
 		catch (error) {
-			console.log(`An error occurred running the provided query on the ${this.type} database`, error);
+			console.log(`An error occurred running the provided query on the ${this.type} database`, query);
+			console.log(error);
 		}
 	}
 
