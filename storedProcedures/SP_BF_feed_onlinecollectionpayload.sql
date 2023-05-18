@@ -133,12 +133,15 @@ WHERE
 	-- This is the DepartmentID that indicates "Archives"
 	O.DepartmentID = '23'
 	/* This below filter query retrieves those Archives that do not have media renditions. */
+	/** Commenting this out as this appears to be filtering out archives that should be included */
+	/*
 	AND O.ObjectID NOT IN (
 		SELECT
 			MediaXrefs.ID
 		FROM
 			MediaXrefs
 	);
+	*/
 
 /**
  * Runs the stored procedure `SP_BF_OnlineCollectionPayload` for each TemporaryObjectID in our `temporaryObjectIDs` table
