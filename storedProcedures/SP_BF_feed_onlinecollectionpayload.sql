@@ -1,3 +1,4 @@
+/****** Formatted using https://poorsql.com/ ******/
 /****** Object:  StoredProcedure [dbo].[SP_BF_feed_onlinecollectionpayload]    Script Date: 12/19/2022 8:55:51 PM ******/
 USE [TMS]
 GO
@@ -11,7 +12,6 @@ GO
 ALTER PROCEDURE [dbo].[SP_BF_feed_onlinecollectionpayload]
 AS
 BEGIN
-		;
 
 	/**
  * SET NOCOUNT ON added to prevent extra result sets FROM
