@@ -12,11 +12,6 @@ GO
 ALTER PROCEDURE [dbo].[SP_BF_feed_onlinecollectionpayload]
 AS
 BEGIN
-
-	/**
- * SET NOCOUNT ON added to prevent extra result sets FROM
- * interfering with SELECT statements.
- */
 	SET NOCOUNT ON;
 
 	CREATE TABLE #temporaryObjectIDs (
@@ -142,7 +137,7 @@ BEGIN
 	FOR
 	SELECT TemporaryObjectID
 		,RenditionExists
-	FROM #temporaryObjectIDs;
+	FROM #temporaryObjectIDs
 
 	OPEN objectCursor
 
@@ -154,7 +149,7 @@ BEGIN
 	WHILE @@FETCH_STATUS = 0
 	BEGIN
 		IF @RenditionExists = 1
-			EXEC [dbo].[SP_BF_OnlineCollectionPayload] @ObjectID;
+			EXEC [dbo].[SP_BF_OnlineCollectionPayload] @ObjectID
 		ELSE
 			EXEC [dbo].[SP_BF_OnlineCollectionPayloadArchives] @ObjectID
 
@@ -162,7 +157,7 @@ BEGIN
 		FROM objectCursor
 		INTO @ObjectID
 			,@RenditionExists
-	END;
+	END
 
 	CLOSE objectCursor;
 
