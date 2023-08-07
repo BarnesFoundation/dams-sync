@@ -40,6 +40,9 @@ export class MainSyncProcess {
 		// Create the NetX main object table
 		await db.createMainObjectTable();
 
+		// Create the NetX text entry storage table
+		await db.createTextEntryStoreTable();
+
 		// Create the NetX constituent records table
 		await db.createConstituentTable();
 
