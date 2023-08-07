@@ -66,7 +66,7 @@ export class ObjectProcess {
 			const cpTextEntry = textEntryValue.replace(NEWLINE_RETURN_TAB_REGEX, '');
 
 			// Execute the query to get the stored text entry we have in the NetX intermediate database
-			const storedTextEntryQueryResult = await this.netxCon.executeQuery(storedTextEntryQuery);
+			const storedTextEntryQueryResult = await this.netxClient.query(storedTextEntryQuery);
 			const storedTextEntryRecordSet = storedTextEntryQueryResult?.rows;
 			const storedTextEntry = storedTextEntryRecordSet?.length ? storedTextEntryRecordSet[0].textEntry : ''
 
@@ -83,7 +83,7 @@ export class ObjectProcess {
 			const { query: textEntryInsertQuery, values: textEntryInsertValues } = QueryHelpers.insertQueryGenerator(NetXTables.textEntryStore, {
 				objectId: this.objectId, textEntry: cpTextEntry, lastUpdatedAt: new Date()
 			})
-			await this.netxCon.executeQuery(textEntryInsertQuery, textEntryInsertValues);
+			await this.netxClient.query(textEntryInsertQuery, textEntryInsertValues);
 
 			try {
 				const parsedCollectionPayload = JSON.parse(cpTextEntry) as CollectionPayload;

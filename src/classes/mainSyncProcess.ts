@@ -23,7 +23,9 @@ export class MainSyncProcess {
 			FROM TextEntries 
 			WHERE TextTypeId = 67
 			AND TextEntry IS NOT NULL
-			AND TextEntry != ''`;
+			AND TextEntry != ''
+			ORDER BY ID ASC
+			`;
 
 		// From knowledge of the database - we have around 7622 objects we will work with - get the exact count to make sure
 		const recordset = (await this.tmsCon.executeQuery(objectIdQuery)).recordset as ObjectID[];
@@ -63,6 +65,7 @@ export class MainSyncProcess {
 		const parallelExecutionLimit = 75;
 		const numberOfBatches = Math.ceil(count / parallelExecutionLimit);
 
+		console.log(`There are ${count} records to process from TMS`);
 		console.log(`There will be ${numberOfBatches} batches of ${parallelExecutionLimit} executions each`);
 
 		// Retrieve the objects in batches
