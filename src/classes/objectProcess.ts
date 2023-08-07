@@ -61,6 +61,7 @@ export class ObjectProcess {
 
 			if (Boolean(textEntryValue) === false) {
 				console.warn(`No "TextEntry" data available for Object ID "${this.objectId}"`, textEntryValue);
+				this.netxClient.release();
 				return resolve('');
 			}
 			const cpTextEntry = textEntryValue.replace(NEWLINE_RETURN_TAB_REGEX, '');
@@ -74,6 +75,7 @@ export class ObjectProcess {
 			// then there's been no new data for the record. We can move forward without
 			// doing any subsequent processing because the data is the same
 			if (storedTextEntry === cpTextEntry) {
+				this.netxClient.release();
 				return resolve('')
 			}
 
