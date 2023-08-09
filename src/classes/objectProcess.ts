@@ -47,17 +47,45 @@ export class ObjectProcess {
 			AND TextTypeId = 67
 			AND TextEntry IS NOT NULL`;
 
-			// Execute the query to get the text entry
+			// Check if this copy differs from the last processed version of data we have
+			const storedTextEntryQuery = `
+			SELECT "textEntry"
+			FROM "text_entry_store"
+			WHERE "objectId" = ${this.objectId}
+			`;
+
+			// Execute the query to get the text entry from TMS 
 			const queryResult = await this.tmsCon.executeQuery(collectionPayloadQuery);
 			const recordSet = queryResult.recordset as CollectionPayloadTextEntry[];
 			const textEntryValue = recordSet[0]?.TextEntry;
 
 			if (Boolean(textEntryValue) === false) {
 				console.warn(`No "TextEntry" data available for Object ID "${this.objectId}"`, textEntryValue);
+				this.netxClient.release();
 				return resolve('');
 			}
-
 			const cpTextEntry = textEntryValue.replace(NEWLINE_RETURN_TAB_REGEX, '');
+
+			// Execute the query to get the stored text entry we have in the NetX intermediate database
+			const storedTextEntryQueryResult = await this.netxClient.query(storedTextEntryQuery);
+			const storedTextEntryRecordSet = storedTextEntryQueryResult?.rows;
+			const storedTextEntry = storedTextEntryRecordSet?.length ? storedTextEntryRecordSet[0].textEntry : ''
+
+			// If our stored version of the text entry matches the current one from TMS
+			// then there's been no new data for the record. We can move forward without
+			// doing any subsequent processing because the data is the same
+			if (storedTextEntry === cpTextEntry) {
+				this.netxClient.release();
+				return resolve('')
+			}
+
+			// At this point, the version of the TextEntry we have stored differs from
+			// what currently exists in TMS. Let's persist this new value into the TextEntryStore
+			console.info(`Stored version of TextEntry for Object ID ${this.objectId} is being updated`)
+			const { query: textEntryInsertQuery, values: textEntryInsertValues } = QueryHelpers.insertQueryGenerator(NetXTables.textEntryStore, {
+				objectId: this.objectId, textEntry: cpTextEntry, lastUpdatedAt: new Date()
+			})
+			await this.netxClient.query(textEntryInsertQuery, textEntryInsertValues);
 
 			try {
 				const parsedCollectionPayload = JSON.parse(cpTextEntry) as CollectionPayload;
@@ -75,7 +103,7 @@ export class ObjectProcess {
 				} else {
 					console.error(`Encountered error during addition of object record to NetX Intermediat Database. Object ID was "${this.objectId}"`, error);
 				}
-			} 
+			}
 
 			// Now that we've finished everything - release the client
 			this.netxClient.release();
@@ -86,7 +114,7 @@ export class ObjectProcess {
 		});
 	}
 
-	/** Performs the necessary functions in order to prepate and add an object to NetX database */ 
+	/** Performs the necessary functions in order to prepate and add an object to NetX database */
 	private async addObjectRecordToNetX(or: ObjectRecord) {
 
 		const {
@@ -123,7 +151,7 @@ export class ObjectProcess {
 
 				try { await this.netxClient.query(mapQuery, mapValues); }
 				catch (error) {
-					console.log(`An error occurred doing mapping`, error);
+					console.log(`An error occurred performing mapping`, error);
 					console.log(mapQuery);
 					console.log(mapValues);
 				}
