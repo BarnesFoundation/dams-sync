@@ -4,3 +4,4 @@ GRANT REFERENCES, SELECT ON TABLE public.constituent_records TO netx_dams;
 GRANT REFERENCES, SELECT ON TABLE public.main_object_information TO netx_dams;
 GRANT REFERENCES, SELECT ON TABLE public.media_information TO netx_dams;
 GRANT REFERENCES, SELECT ON TABLE public.object_constituent_mappings TO netx_dams;
+GRANT REFERENCES, SELECT ON TABLE public.text_entry_store TO netx_dams;

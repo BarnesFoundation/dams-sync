@@ -35,7 +35,7 @@ export class DatabaseInitializer {
 		const { constituentRecords } = NetXTables;
 		const primaryColumn = constituentRecords.columns[0];
 
-		const columnsString = constituentRecords.columns.map((column, index, array) => `"${column.name}" ${column.type}`)
+		const columnsString = constituentRecords.columns.map((column) => `"${column.name}" ${column.type}`)
 			.join(',\n');
 
 		// Query to create table
@@ -48,6 +48,26 @@ export class DatabaseInitializer {
 
 		await this.netxCon.executeQuery(query);
 	};
+
+		/** Creates the text entry values table -- generates the raw sql to do so and executes it */
+		public createTextEntryStoreTable = async () => {
+
+			const { textEntryStore } = NetXTables;
+			const primaryColumn = textEntryStore.columns[0];
+	
+			const columnsString = textEntryStore.columns.map((column) => `"${column.name}" ${column.type}`)
+				.join(',\n');
+	
+			// Query to create table
+			const query = `
+			CREATE TABLE IF NOT EXISTS ${textEntryStore.tableName} (
+				${columnsString},
+				PRIMARY KEY ("${primaryColumn.name}")
+			);
+			`;
+	
+			await this.netxCon.executeQuery(query);
+		};
 
 	/** Creates the object-to-constituent mapping table. Sets up the needed foreign/primary key relationships 
 	 * between it and the constituent record/main object information tables,

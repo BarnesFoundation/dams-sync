@@ -2,7 +2,8 @@ export interface TablesInformation {
 	mainObjectInformation: TableInformation,
 	constituentRecords: TableInformation,
 	objectConstituentMappings: TableInformation,
-	mediaInformation: TableInformation
+	mediaInformation: TableInformation,
+	textEntryStore: TableInformation
 }
 
 export interface TableInformation {
@@ -15,7 +16,7 @@ export interface TableInformation {
 
 interface ColumnInformation {
 	name: string,
-	type: 'VARCHAR' | 'INTEGER' | 'SERIAL',
+	type: 'VARCHAR' | 'INTEGER' | 'SERIAL' | 'TIMESTAMP',
 	primary?: true,
 	foreign?: true
 }

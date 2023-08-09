@@ -25,3 +25,47 @@ CROSS JOIN (
 ) "constituentInfo"
 WHERE "renditionNumber" = '01-27-02_i1r'
 `;
+
+// For retrieving all archive records modified in the past 24-hours
+const archivesInLastHours = 
+`
+SELECT mi."objectId"
+	,mi."renditionNumber"
+	,tes."lastUpdatedAt"
+FROM media_information mi
+INNER JOIN text_entry_store tes ON tes."objectId" = mi."objectId"
+WHERE mi."objectId" IN (
+		SELECT "objectId"
+		FROM main_object_information moi
+		WHERE moi."objectType" = 'archive'
+			AND moi."objectId" IN (
+				SELECT "objectId"
+				FROM text_entry_store tes
+				WHERE tes."lastUpdatedAt" BETWEEN NOW() - INTERVAL '24 HOURS'
+						AND NOW()
+				)
+		)
+ORDER BY tes."lastUpdatedAt" DESC
+`;
+
+// For retrieving all archive records modified in the past 24-hours
+const mediaInLastHours = 
+`
+SELECT mi."objectId"
+	,mi."renditionNumber"
+	,tes."lastUpdatedAt"
+FROM media_information mi
+INNER JOIN text_entry_store tes ON tes."objectId" = mi."objectId"
+WHERE mi."objectId" IN (
+		SELECT "objectId"
+		FROM main_object_information moi
+		WHERE moi."objectType" = 'media'
+			AND moi."objectId" IN (
+				SELECT "objectId"
+				FROM text_entry_store tes
+				WHERE tes."lastUpdatedAt" BETWEEN NOW() - INTERVAL '24 HOURS'
+						AND NOW()
+				)
+		)
+ORDER BY tes."lastUpdatedAt" DESC
+`;

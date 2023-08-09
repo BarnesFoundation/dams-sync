@@ -97,6 +97,15 @@ export const NetXTables: TablesInformation = {
 			{ name: 'mediaView', type: 'VARCHAR' },
 			{ name: 'publicAccess', type: 'INTEGER' }
 		]
+	},
+
+	textEntryStore: {
+		tableName: 'text_entry_store',
+		columns: [
+			{ name: 'objectId', type: 'INTEGER', primary: true },
+			{ name: 'textEntry', type: 'VARCHAR' },
+			{ name: 'lastUpdatedAt', type: 'TIMESTAMP' }
+		]
 	}
 };
 
