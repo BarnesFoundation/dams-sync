@@ -1,5 +1,6 @@
 import mssql from 'mssql';
 import pg, { Pool, PoolClient } from 'pg';
+import { Logger } from './../logger';
 
 interface ConnectionParams {
 	host: string,
@@ -55,11 +56,11 @@ export class SQLConnection {
 					password: this.password
 				});
 			}
-			console.log(`Successfully connected to the ${this.type} database and created pool`);
+			Logger.debug(`Successfully connected to the ${this.type} database and created pool`);
 		}
 
 		catch (error) {
-			console.log(`An error occurred connecting to the ${this.type} database`, error);
+			Logger.error(`An error occurred connecting to the ${this.type} database`, error);
 		}
 	}
 
@@ -94,8 +95,8 @@ export class SQLConnection {
 		}
 
 		catch (error) {
-			console.log(`An error occurred running the provided query on the ${this.type} database`, query);
-			console.log(error);
+			Logger.error(`An error occurred running the provided query on the ${this.type} database`, query);
+			Logger.error(error);
 		}
 	}
 
@@ -110,11 +111,11 @@ export class SQLConnection {
 				await this.connection.end();
 			}
 
-			console.log(`Successfully ended ${this.type} connection`);
+			Logger.debug(`Successfully ended ${this.type} connection`);
 		}
 
 		catch (error) {
-			console.log(`Could not close ${this.type} connection`, error);
+			Logger.debug(`Could not close ${this.type} connection`, error);
 		}
 	}
 }

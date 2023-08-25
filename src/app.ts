@@ -1,6 +1,7 @@
 import { Config } from './config';
 import { SQLConnection } from './classes/sql';
 import { MainSyncProcess } from './classes/mainSyncProcess';
+import { Logger } from './logger';
 
 class Application {
 
@@ -9,6 +10,7 @@ class Application {
 
 	/** Performs the run of this application */
 	public async perform() {
+		Logger.debug(`Beginning sync`);
 
 		// Set up our connections to TMS and NetX
 		await this.initializeDatabaseConnections();
@@ -25,7 +27,7 @@ class Application {
 		// Now that we're done, close connections
 		await this.closeDatabaseConnections();
 
-		console.log(`Ending sync`);
+		Logger.debug(`Ending sync`);
 	}
 
 	/** Initializes each of our connections - 1 to TMS and 1 to NetX */

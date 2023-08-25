@@ -3,8 +3,9 @@ import { SQLConnection } from './sql';
 import { NetXTables } from '../constants/netXDatabase';
 import { PoolClient } from 'pg';
 import QueryHelpers from '../constants/queryHelpers';
-import ObjectHelpers, { ARCHIVE_TYPE, MEDIA_TYPE } from '../constants/objectHelpers';
+import ObjectHelpers from '../constants/objectHelpers';
 import { OBJECT_RECORD } from '../constants/names';
+import { Logger } from './../logger';
 
 const NEWLINE_RETURN_TAB_REGEX = /[\n\r\t]/g;
 
@@ -60,7 +61,7 @@ export class ObjectProcess {
 			const textEntryValue = recordSet[0]?.TextEntry;
 
 			if (Boolean(textEntryValue) === false) {
-				console.warn(`No "TextEntry" data available for Object ID "${this.objectId}"`, textEntryValue);
+				Logger.warn(`No "TextEntry" data available for Object ID "${this.objectId}"`, textEntryValue);
 				this.netxClient.release();
 				return resolve('');
 			}
@@ -81,7 +82,7 @@ export class ObjectProcess {
 
 			// At this point, the version of the TextEntry we have stored differs from
 			// what currently exists in TMS. Let's persist this new value into the TextEntryStore
-			console.info(`Stored version of TextEntry for Object ID ${this.objectId} is being updated`)
+			Logger.info(`Stored version of TextEntry for Object ID ${this.objectId} is being updated`)
 			const { query: textEntryInsertQuery, values: textEntryInsertValues } = QueryHelpers.insertQueryGenerator(NetXTables.textEntryStore, {
 				objectId: this.objectId, textEntry: cpTextEntry, lastUpdatedAt: new Date()
 			})
@@ -99,9 +100,9 @@ export class ObjectProcess {
 
 			catch (error) {
 				if (error instanceof SyntaxError) {
-					console.error(`Encountered an error parsing JSON. Object ID was "${this.objectId}"`);
+					Logger.error(`Encountered an error parsing JSON. Object ID was "${this.objectId}"`);
 				} else {
-					console.error(`Encountered error during addition of object record to NetX Intermediat Database. Object ID was "${this.objectId}"`, error);
+					Logger.error(`Encountered error during addition of object record to NetX Intermediat Database. Object ID was "${this.objectId}"`, error);
 				}
 			}
 
@@ -110,7 +111,7 @@ export class ObjectProcess {
 			resolve('');
 
 			// Inform that the batch this process belongs to has completed
-			console.log(`Completed Batch Number ${this.batchNumber} Process Number ${this.processNumber}`);
+			Logger.debug(`Completed Batch Number ${this.batchNumber} Process Number ${this.processNumber}`);
 		});
 	}
 
@@ -151,9 +152,9 @@ export class ObjectProcess {
 
 				try { await this.netxClient.query(mapQuery, mapValues); }
 				catch (error) {
-					console.log(`An error occurred performing mapping`, error);
-					console.log(mapQuery);
-					console.log(mapValues);
+					Logger.log(`An error occurred performing mapping`, error);
+					Logger.debug(mapQuery);
+					Logger.debug(mapValues);
 				}
 			}
 		}
