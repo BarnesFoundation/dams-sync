@@ -46,7 +46,7 @@ The typical deployment setup would look like this - first you build the executab
 
 ### Build
 
-1. Pull this code repository, switch to node v10.19, and run `npm install` to install the needed dependencies
+1. Pull this code repository, switch to node v12 and run `npm install` to install the needed dependencies
 2. Deploy an empty database schema on AWS (or local for local development) and make note of the needed values for the `.env` file
 3. Get the credentials for connecting to the TMS database
 4. Populate the `.env` file accordingly

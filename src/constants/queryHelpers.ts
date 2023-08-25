@@ -1,4 +1,5 @@
 import { TableInformation } from '../interfaces/netXDatabaseInterfaces';
+import { Logger } from '../logger';
 
 /** Generates the query for inserting a record along with the values to be inserted */
 const insertQueryGenerator = (table: TableInformation, object: { [key: string]: any }) => {
@@ -8,7 +9,7 @@ const insertQueryGenerator = (table: TableInformation, object: { [key: string]: 
 	const values = [];
 
 	if (!object) {
-		console.log(tableName, object);
+		Logger.debug(tableName, object);
 	}
 
 	for (let [fieldName, fieldValue] of Object.entries(object)) {
@@ -56,7 +57,7 @@ const generateOnConflictCommand = (table: TableInformation, columnNamesToInsert:
 
 	// When there are columns to set -- we'll update. Otherwise, if we have no columns to set 
 	// then it's only the primary key columns that would be updated, do nothing because we don't want to override our primary id's
-	const setString =  (setList.length > 0) ? `DO UPDATE SET ${setList.join()}` : 'DO NOTHING'
+	const setString = (setList.length > 0) ? `DO UPDATE SET ${setList.join()}` : 'DO NOTHING'
 
 	const onConflictString = `
 	ON CONFLICT ${constraintString}
