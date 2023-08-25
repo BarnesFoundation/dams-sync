@@ -2,6 +2,7 @@ import { ObjectID } from '../interfaces/queryResponses';
 import { SQLConnection } from './sql';
 import { ObjectProcess } from './objectProcess';
 import { DatabaseInitializer } from './databaseInitializer';
+import { Logger } from '.././logger';
 
 export class MainSyncProcess {
 
@@ -65,8 +66,8 @@ export class MainSyncProcess {
 		const parallelExecutionLimit = 75;
 		const numberOfBatches = Math.ceil(count / parallelExecutionLimit);
 
-		console.log(`There are ${count} records to process from TMS`);
-		console.log(`There will be ${numberOfBatches} batches of ${parallelExecutionLimit} executions each`);
+		Logger.debug(`There are ${count} records to process from TMS`);
+		Logger.debug(`There will be ${numberOfBatches} batches of ${parallelExecutionLimit} executions each`);
 
 		// Retrieve the objects in batches
 		for (let i = 0; i <= numberOfBatches; i++) {
