@@ -20,7 +20,7 @@ export class MainSyncProcess {
 		// Query to get count of objects we'll end up working with - 67 is the type for the text type
 		// We want to avoid pulling non-existent text entry values 
 		const objectIdQuery = `
-			SELECT TOP 200 ID 
+			SELECT ID 
 			FROM TextEntries 
 			WHERE TextTypeId = 67
 			AND TextEntry IS NOT NULL
