@@ -1,8 +1,11 @@
-import { ObjectID } from '../interfaces/queryResponses';
+import { ObjectID, StoredTextEntry, CollectionPayloadTextEntry } from '../interfaces/queryResponses';
+import { splitArray, flattenArray } from '../constants/arrayHelpers';
 import { SQLConnection } from './sql';
 import { ObjectProcess } from './objectProcess';
 import { DatabaseInitializer } from './databaseInitializer';
 import { Logger } from '.././logger';
+
+const NEWLINE_RETURN_TAB_REGEX = /[\n\r\t]/g;
 
 export class MainSyncProcess {
 
@@ -56,28 +59,105 @@ export class MainSyncProcess {
 		await db.createMediaInformationTable();
 	};
 
+	private identifyModifiedRecords = async (objectIds: Array<ObjectID>) => {
+
+		// Query to get the Online Collection Payload for these Object IDs
+		const objectIdString = objectIds.map((objectId) => objectId.ID).join();
+		const collectionPayloadQuery = `
+			SELECT ID, TextEntry 
+			FROM TextEntries 
+			WHERE ID IN (${objectIdString})
+			AND TextTypeId = 67
+			AND TextEntry IS NOT NULL
+			ORDER BY ID ASC`;
+
+		// Check if this copy differs from the last processed version of data we have
+		const storedTextEntryQuery = `
+			SELECT "objectId", "textEntry"
+			FROM "text_entry_store"
+			WHERE "objectId" IN (${objectIdString})
+			ORDER BY "objectId" ASC 
+			`;
+
+		// Execute the query to get the text entries from TMS 
+		const tmsQueryResult = await this.tmsCon.executeQuery(collectionPayloadQuery);
+		const tmsRecordSet = tmsQueryResult.recordset as CollectionPayloadTextEntry[];
+
+		// Execute the query to get the same text entries from the intermediate database
+		const storedTextEntryQueryResult = await this.netxCon.executeQuery(storedTextEntryQuery);
+		const storedTextEntryRecordSet = storedTextEntryQueryResult?.rows as Array<StoredTextEntry>;
+
+		// Now figure out which text entries from TMS are now different from what we have stored
+		const modifiedTMSRecords = tmsRecordSet.reduce((acc, tmsRecord) => {
+			if (Boolean(tmsRecord.TextEntry) === false) {
+				Logger.warn(`No "TextEntry"  available for Object ID "${tmsRecord.ID}" so it will not be added to NetX`, tmsRecord.TextEntry);
+				return acc;
+			}
+
+			const tmsTextEntry = tmsRecord.TextEntry?.replace(NEWLINE_RETURN_TAB_REGEX, '');
+			const storedTextEntry = storedTextEntryRecordSet.find((storedRecord) => tmsRecord.ID === storedRecord.objectId);
+
+			// If the TMS TextEntry and Stored TextEntry are the same, then the record was not modified
+			if (tmsTextEntry === storedTextEntry?.textEntry) {
+				return acc;
+			}
+
+			// Otherwise, record was modified or we don't have it yet, so we'll store it
+			acc.push({ ID: tmsRecord.ID, TextEntry: tmsRecord.TextEntry })
+
+			return acc;
+		}, [] as Array<CollectionPayloadTextEntry>);
+
+		return modifiedTMSRecords;
+	};
+
 	/** Runs the main process tasks in the sync */
 	public run = async () => {
 
 		// Get the object ids and the total count
 		const { recordset, count } = await this.getCollectionObjectIDs();
+		const modifiedRecordIdSet: Array<CollectionPayloadTextEntry> = [];
 
 		// Set up batches of object retrieval to run
-		const parallelExecutionLimit = 75;
-		const numberOfBatches = Math.ceil(count / parallelExecutionLimit);
+		const parallelExecutionLimit = 2;
+		const splitRecordSet = splitArray(recordset, 1000)
+		const numberOfBatches = Math.ceil(splitRecordSet.length / parallelExecutionLimit);
 
-		Logger.debug(`There are ${count} records to process from TMS`);
-		Logger.debug(`There will be ${numberOfBatches} batches of ${parallelExecutionLimit} executions each`);
+		Logger.debug(`There are ${count} records to fetch and process from TMS`);
+		Logger.debug(`There will be total ${numberOfBatches} batches of ${parallelExecutionLimit} executions.
+					  Each execution contains 1000 records`);
 
 		// Retrieve the objects in batches
 		for (let i = 0; i <= numberOfBatches; i++) {
 
 			// Setup this batch
 			const batchStart = i * parallelExecutionLimit;
-			const batchArguments = recordset.slice(batchStart, (batchStart + parallelExecutionLimit));
+			const batchArguments = splitRecordSet.slice(batchStart, (batchStart + parallelExecutionLimit));
+			const batchRequests = batchArguments.map((argument) => {
+				return this.identifyModifiedRecords(argument);
+			});
 
-			const batchRequests = batchArguments.map((argument, index) => {
-				const op = new ObjectProcess(argument, this.tmsCon, this.netxCon, index, i);
+			// Execute the batches of promises
+			const identifiedRecordIds = await Promise.all(batchRequests);
+			modifiedRecordIdSet.push(...flattenArray(identifiedRecordIds))
+		}
+
+		Logger.debug(`There are ${modifiedRecordIdSet.length} records identified that must be updated/created from TMS`);
+		Logger.debug(modifiedRecordIdSet.map((record) => record.ID).join());
+
+		// Set up batches of object creation/update to run
+		const parallelCreationLimit = 2;
+		const splitModifiedRecordSet = splitArray(modifiedRecordIdSet, 1000)
+		const numberOfCreationBatches = Math.ceil(splitModifiedRecordSet.length / parallelCreationLimit);
+
+		for (let j = 0; j <= numberOfCreationBatches; j++) {
+
+			// Setup this batch
+			const batchStart = j * parallelCreationLimit;
+			const batchArguments = splitModifiedRecordSet.slice(batchStart, (batchStart + parallelCreationLimit));
+
+			const batchRequests = batchArguments.map((argument) => {
+				const op = new ObjectProcess(argument, this.netxCon);
 				return op.perform();
 			});
 
