@@ -3,7 +3,8 @@ export interface ObjectID {
 };
 
 export interface CollectionPayloadTextEntry {
-	TextEntry: string
+	ID: number,
+	TextEntry?: string,
 };
 
 export interface CollectionPayload {
@@ -14,4 +15,9 @@ export type ObjectRecord = NormalObject & { ConstituentRecord?: NormalObject[] }
 
 export interface NormalObject {
 	[key: string]: string | number,
+}
+
+export interface StoredTextEntry {
+	objectId: number,
+	textEntry: string,
 }
