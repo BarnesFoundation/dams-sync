@@ -10,6 +10,7 @@ class Application {
 
 	/** Performs the run of this application */
 	public async perform() {
+		const start = Date.now();
 		Logger.debug(`Beginning sync`);
 
 		// Set up our connections to TMS and NetX
@@ -27,7 +28,10 @@ class Application {
 		// Now that we're done, close connections
 		await this.closeDatabaseConnections();
 
-		Logger.debug(`Ending sync`);
+		const elapsedTime = Date.now() - start;
+		const minutes = Math.floor(elapsedTime / 60000);
+		const seconds = parseInt(((elapsedTime % 60000) / 1000).toFixed(0));
+		Logger.debug(`Ending sync after ${minutes} minutes and ${(seconds < 10 ? '0' : '')}${seconds} seconds`);
 	}
 
 	/** Initializes each of our connections - 1 to TMS and 1 to NetX */
