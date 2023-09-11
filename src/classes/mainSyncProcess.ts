@@ -32,10 +32,10 @@ export class MainSyncProcess {
 			`;
 
 		// From knowledge of the database - we have around 7622 objects we will work with - get the exact count to make sure
-		const recordset = (await this.tmsCon.executeQuery(objectIdQuery)).recordset as ObjectID[];
-		const count = recordset.length;
+		const queryResult = await this.tmsCon.executeQuery(objectIdQuery);
+		const recordset = queryResult.recordset as ObjectID[]
 
-		return { recordset, count };
+		return { recordset, count:  recordset.length };
 	};
 
 	/** Initializes the NetX database as this should only run once during each sync*/
@@ -149,6 +149,10 @@ export class MainSyncProcess {
 		const parallelCreationLimit = 2;
 		const splitModifiedRecordSet = splitArray(modifiedRecordIdSet, 1000)
 		const numberOfCreationBatches = Math.ceil(splitModifiedRecordSet.length / parallelCreationLimit);
+
+		Logger.debug(`There are ${modifiedRecordIdSet.length} records to create or update into NetX`);
+		Logger.debug(`There will be total ${numberOfCreationBatches} batches of ${parallelCreationLimit} executions.
+					  Each execution contains 1000 records`);
 
 		for (let j = 0; j <= numberOfCreationBatches; j++) {
 
