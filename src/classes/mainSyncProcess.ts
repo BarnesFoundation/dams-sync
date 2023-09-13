@@ -1,9 +1,11 @@
+import jsonDiff from 'json-diff';
+
 import { ObjectID, StoredTextEntry, CollectionPayloadTextEntry } from '../interfaces/queryResponses';
 import { splitArray, flattenArray } from '../constants/arrayHelpers';
 import { SQLConnection } from './sql';
 import { ObjectProcess } from './objectProcess';
 import { DatabaseInitializer } from './databaseInitializer';
-import { Logger } from '.././logger';
+import { Logger, DiffLogger } from '.././logger';
 
 const NEWLINE_RETURN_TAB_REGEX = /[\n\r\t]/g;
 
@@ -35,7 +37,7 @@ export class MainSyncProcess {
 		const queryResult = await this.tmsCon.executeQuery(objectIdQuery);
 		const recordset = queryResult.recordset as ObjectID[]
 
-		return { recordset, count:  recordset.length };
+		return { recordset, count: recordset.length };
 	};
 
 	/** Initializes the NetX database as this should only run once during each sync*/
@@ -95,14 +97,18 @@ export class MainSyncProcess {
 			}
 
 			const tmsTextEntry = tmsRecord.TextEntry?.replace(NEWLINE_RETURN_TAB_REGEX, '');
-			const storedTextEntry = storedTextEntryRecordSet.find((storedRecord) => tmsRecord.ID === storedRecord.objectId);
+			const storedTextEntry = storedTextEntryRecordSet.find((storedRecord) => tmsRecord.ID === storedRecord.objectId)?.textEntry || '';
 
 			// If the TMS TextEntry and Stored TextEntry are the same, then the record was not modified
-			if (tmsTextEntry === storedTextEntry?.textEntry) {
+			if (tmsTextEntry === storedTextEntry) {
 				return acc;
 			}
 
 			// Otherwise, record was modified or we don't have it yet, so we'll store it
+			// We also want to see the difference between the two
+			const objectDifference = jsonDiff.diff(JSON.parse(storedTextEntry || '{}'), JSON.parse(tmsTextEntry), { raw: true });
+			Logger.debug(`Difference in JSON exists between Stored TextEntry and TMS TextEntry for ${tmsRecord.ID}`);
+			DiffLogger.debug({ [tmsRecord.ID]: objectDifference });
 			acc.push({ ID: tmsRecord.ID, TextEntry: tmsRecord.TextEntry })
 
 			return acc;
