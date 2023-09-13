@@ -17,6 +17,7 @@
 	"devDependencies": {
 		"@types/dotenv": "^8.2.0",
 		"@types/jest": "^26.0.23",
+		"@types/json-diff": "^1.0.0",
 		"@types/mysql": "^2.15.11",
 		"@types/node": "^14.0.1",
 		"@types/pg": "^7.14.3",
@@ -26,6 +27,7 @@
 	},
 	"dependencies": {
 		"dotenv": "^8.2.0",
+		"json-diff": "^1.0.6",
 		"mssql": "^6.2.0",
 		"pg": "^8.2.1",
 		"pkg": "^4.4.9",
