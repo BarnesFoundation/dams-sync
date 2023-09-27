@@ -95,7 +95,8 @@ export const NetXTables: TablesInformation = {
 			{ name: 'technique', type: 'VARCHAR' },
 			{ name: 'publicCaption', type: 'VARCHAR' },
 			{ name: 'mediaView', type: 'VARCHAR' },
-			{ name: 'publicAccess', type: 'INTEGER' }
+			{ name: 'publicAccess', type: 'INTEGER' },
+			{ name: 'publishedArchivesReference', type: 'VARCHAR' }
 		]
 	},
 
