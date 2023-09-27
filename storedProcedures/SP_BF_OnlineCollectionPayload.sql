@@ -20,7 +20,7 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
  EnsembleIndex nvarchar(max), PrimaryImageAltText nvarchar(max), AudioTour nvarchar(max), Site nvarchar(128), 
  Room nvarchar(128), Wall nvarchar(64), HomeLocation nvarchar(512), MediaFile nvarchar(450), MediaView nvarchar(64),
  MediaDescription nvarchar(max), PublicAccess smallint, ISPrimary smallint, PhotographerName nvarchar(450),MediaRole nvarchar(32), 
- PublicCaption nvarchar(max),RenditionDate nvarchar(19), Technique nvarchar(255), RenditionNumber nvarchar(64) ) 
+ PublicCaption nvarchar(max),RenditionDate nvarchar(19), Technique nvarchar(255), RenditionNumber nvarchar(64), PublicArchivesReference nvarchar(max)) 
 	-- SET NOCOUNT ON added to prevent extra result sets from
 	-- interfering with SELECT statements.
 	SET NOCOUNT ON;
@@ -55,7 +55,7 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
 	INNER JOIN ObjRights obr ON obr.OBJECTID = O.ObjectID
 	INNER JOIN ObjRightsTypes Ort on Ort.ObjRightsTypeID = Obr.ObjRightsTypeID
 	/*text Entries - short description, long description, visual description, published provenance,
-	EnsembleIndex, PrimaryImageAltTxt and AudioTour */
+	EnsembleIndex, PrimaryImageAltTxt and AudioTour, Published Archives Reference */
 	LEFT OUTER JOIN TextEntries tes on tes.id = O.ObjectID and tes.Texttypeid = 48
 	LEFT OUTER JOIN TextEntries tel on tel.id = O.ObjectID and tel.Texttypeid = 49
 	LEFT OUTER JOIN TextEntries tev on tev.id = O.ObjectID and tev.Texttypeid = 50
@@ -63,6 +63,7 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
 	LEFT OUTER JOIN TextEntries teei on teei.id = O.ObjectID and teei.Texttypeid = 57 
 	LEFT OUTER JOIN TextEntries tepiat on tepiat.id = O.ObjectID and tepiat.Texttypeid = 54 
 	LEFT OUTER JOIN TextEntries teat on teat.id = O.ObjectID and teat.Texttypeid = 32 
+	LEFT OUTER JOIN TextEntries teast on teast.id = O.ObjectID and teast.Texttypeid = <TextTypeId of Published Archives Reference goes here>
 	/* site, room, wall, homelocation */
 	INNER JOIN objcomponents obc on o.objectID = obc.ObjectID 	 
     INNER JOIN locations l on obc.HomeLocationID  = l.LocationID
