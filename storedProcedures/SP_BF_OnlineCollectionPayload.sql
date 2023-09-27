@@ -36,7 +36,7 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
 	        else O.bibliography end as bibliography, 
 	ort.ObjRightsType, obr.ObjRightsTypeID , obr.CreditLineRepro, obr.Copyright,
 	tes.TextEntryHTML, tel.TextEntryHTML, tev.TextEntryHTML, tep.TextEntryHTML, teei.TextEntryHTML, tepiat.TextEntryHTML, 
-	teat.TextEntryHTML, l.site, l.Room, l.UnitType, l.LocationString, mf.FileName , mm.MediaView, mm.Description, mm.PublicAccess,
+	teat.TextEntryHTML, teast.TextEntryHTML, l.site, l.Room, l.UnitType, l.LocationString, mf.FileName , mm.MediaView, mm.Description, mm.PublicAccess,
 	x.PrimaryDisplay, conxref1.DisplayName, conxref1.Role, mm.PublicCaption, mr.RenditionDate, mr.Technique, mr.RenditionNumber
 	from Objects O 
 	/** Object Titles */
