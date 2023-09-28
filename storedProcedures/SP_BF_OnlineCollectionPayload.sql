@@ -143,7 +143,7 @@ INNER JOIN Constituents cts ON cn.ConstituentID = cts.ConstituentID and cts.Acti
 		+ COALESCE('"ensembleIndex":"' + dbo.fn_String_Escape(replace(replace(EnsembleIndex, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
 		+ COALESCE('"primaryImageAltText":"' + dbo.fn_String_Escape(replace(replace(PrimaryImageAltText, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
 		+ COALESCE('"audioTour":"' + dbo.fn_String_Escape(replace(replace(AudioTour, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
-        
+        + COALESCE('"publishedArchivesReference":"' + dbo.fn_String_Escape(replace(replace(PublicArchivesReference, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
 		+ COALESCE('"mediaName":"' + MediaFile + '",','')
 		+ COALESCE('"mediaView":"' + MediaView + '",','')
 		+ COALESCE('"mediaDescription":"' + dbo.fn_String_Escape(replace(replace(MediaDescription, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
