@@ -17,10 +17,10 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
  ExhibitionHistory nvarchar(max), Bibliography nvarchar(max), CopyrightStatus nvarchar(48), CopyrightsTypeID int,
  CreditLine nvarchar(max), copyright nvarchar(max), ShortDescription nvarchar(max), 
  LongDescription nvarchar(max), VisualDescription nvarchar(max), PublishedProvenance nvarchar(max), 
- EnsembleIndex nvarchar(max), PrimaryImageAltText nvarchar(max), AudioTour nvarchar(max), Site nvarchar(128), 
+ EnsembleIndex nvarchar(max), PrimaryImageAltText nvarchar(max), AudioTour nvarchar(max), PublicArchivesReference nvarchar(max), Site nvarchar(128), 
  Room nvarchar(128), Wall nvarchar(64), HomeLocation nvarchar(512), MediaFile nvarchar(450), MediaView nvarchar(64),
  MediaDescription nvarchar(max), PublicAccess smallint, ISPrimary smallint, PhotographerName nvarchar(450),MediaRole nvarchar(32), 
- PublicCaption nvarchar(max),RenditionDate nvarchar(19), Technique nvarchar(255), RenditionNumber nvarchar(64) ) 
+ PublicCaption nvarchar(max),RenditionDate nvarchar(19), Technique nvarchar(255), RenditionNumber nvarchar(64)) 
 	-- SET NOCOUNT ON added to prevent extra result sets from
 	-- interfering with SELECT statements.
 	SET NOCOUNT ON;
@@ -36,7 +36,7 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
 	        else O.bibliography end as bibliography, 
 	ort.ObjRightsType, obr.ObjRightsTypeID , obr.CreditLineRepro, obr.Copyright,
 	tes.TextEntryHTML, tel.TextEntryHTML, tev.TextEntryHTML, tep.TextEntryHTML, teei.TextEntryHTML, tepiat.TextEntryHTML, 
-	teat.TextEntryHTML, l.site, l.Room, l.UnitType, l.LocationString, mf.FileName , mm.MediaView, mm.Description, mm.PublicAccess,
+	teat.TextEntryHTML, teast.TextEntryHTML, l.site, l.Room, l.UnitType, l.LocationString, mf.FileName , mm.MediaView, mm.Description, mm.PublicAccess,
 	x.PrimaryDisplay, conxref1.DisplayName, conxref1.Role, mm.PublicCaption, mr.RenditionDate, mr.Technique, mr.RenditionNumber
 	from Objects O 
 	/** Object Titles */
@@ -55,7 +55,7 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
 	INNER JOIN ObjRights obr ON obr.OBJECTID = O.ObjectID
 	INNER JOIN ObjRightsTypes Ort on Ort.ObjRightsTypeID = Obr.ObjRightsTypeID
 	/*text Entries - short description, long description, visual description, published provenance,
-	EnsembleIndex, PrimaryImageAltTxt and AudioTour */
+	EnsembleIndex, PrimaryImageAltTxt and AudioTour, Published Archives Reference */
 	LEFT OUTER JOIN TextEntries tes on tes.id = O.ObjectID and tes.Texttypeid = 48
 	LEFT OUTER JOIN TextEntries tel on tel.id = O.ObjectID and tel.Texttypeid = 49
 	LEFT OUTER JOIN TextEntries tev on tev.id = O.ObjectID and tev.Texttypeid = 50
@@ -63,6 +63,7 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
 	LEFT OUTER JOIN TextEntries teei on teei.id = O.ObjectID and teei.Texttypeid = 57 
 	LEFT OUTER JOIN TextEntries tepiat on tepiat.id = O.ObjectID and tepiat.Texttypeid = 54 
 	LEFT OUTER JOIN TextEntries teat on teat.id = O.ObjectID and teat.Texttypeid = 32 
+	LEFT OUTER JOIN TextEntries teast on teast.id = O.ObjectID and teast.Texttypeid = 73
 	/* site, room, wall, homelocation */
 	INNER JOIN objcomponents obc on o.objectID = obc.ObjectID 	 
     INNER JOIN locations l on obc.HomeLocationID  = l.LocationID
@@ -142,7 +143,7 @@ INNER JOIN Constituents cts ON cn.ConstituentID = cts.ConstituentID and cts.Acti
 		+ COALESCE('"ensembleIndex":"' + dbo.fn_String_Escape(replace(replace(EnsembleIndex, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
 		+ COALESCE('"primaryImageAltText":"' + dbo.fn_String_Escape(replace(replace(PrimaryImageAltText, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
 		+ COALESCE('"audioTour":"' + dbo.fn_String_Escape(replace(replace(AudioTour, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
-        
+        + COALESCE('"publishedArchivesReference":"' + dbo.fn_String_Escape(replace(replace(PublicArchivesReference, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
 		+ COALESCE('"mediaName":"' + MediaFile + '",','')
 		+ COALESCE('"mediaView":"' + MediaView + '",','')
 		+ COALESCE('"mediaDescription":"' + dbo.fn_String_Escape(replace(replace(MediaDescription, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
