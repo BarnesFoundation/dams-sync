@@ -41,7 +41,8 @@ export const NetXTables: TablesInformation = {
 			{ name: 'caption', type: 'VARCHAR' },
 			{ name: 'ImagecreditLine', type: 'VARCHAR', },
 			{ name: 'objectType', type: 'VARCHAR' },
-			{ name: 'description', type: 'VARCHAR' }
+			{ name: 'description', type: 'VARCHAR' },
+			{ name: 'publishedArchivesReference', type: 'VARCHAR' }
 		]
 	},
 
@@ -95,7 +96,7 @@ export const NetXTables: TablesInformation = {
 			{ name: 'technique', type: 'VARCHAR' },
 			{ name: 'publicCaption', type: 'VARCHAR' },
 			{ name: 'mediaView', type: 'VARCHAR' },
-			{ name: 'publicAccess', type: 'INTEGER' }
+			{ name: 'publicAccess', type: 'INTEGER' },
 		]
 	},
 
