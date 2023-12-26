@@ -1,11 +1,8 @@
-/****** Formatted using https://poorsql.com/ ******/
-/****** Object:  StoredProcedure [dbo].[SP_BF_feed_onlinecollectionpayload]    Script Date: 12/19/2022 8:55:51 PM ******/
 USE [TMS]
 GO
-
+/****** Object:  StoredProcedure [dbo].[SP_BF_feed_onlinecollectionpayload]    Script Date: 12/26/2023 10:49:21 AM ******/
 SET ANSI_NULLS ON
 GO
-
 SET QUOTED_IDENTIFIER ON
 GO
 

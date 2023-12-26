@@ -1,12 +1,21 @@
 USE [TMS]
 GO
-/****** Object:  StoredProcedure [dbo].[SP_BF_OnlineCollectionPayload]    Script Date: 12/19/2022 9:00:56 PM ******/
+/****** Object:  StoredProcedure [dbo].[SP_BF_OnlineCollectionPayload]    Script Date: 12/26/2023 10:49:59 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
+
+
+-- =============================================
+-- Author:		<Author,,Name>
+-- Create date: <Create Date,,>
+-- Description:	<Description,,>
+-- =============================================
 ALTER PROCEDURE [dbo].[SP_BF_OnlineCollectionPayload] 
+	-- Add the parameters for the stored procedure here
 	   @ObjectID nvarchar(max) 
 AS
 BEGIN
@@ -20,7 +29,7 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
  EnsembleIndex nvarchar(max), PrimaryImageAltText nvarchar(max), AudioTour nvarchar(max), PublicArchivesReference nvarchar(max), Site nvarchar(128), 
  Room nvarchar(128), Wall nvarchar(64), HomeLocation nvarchar(512), MediaFile nvarchar(450), MediaView nvarchar(64),
  MediaDescription nvarchar(max), PublicAccess smallint, ISPrimary smallint, PhotographerName nvarchar(450),MediaRole nvarchar(32), 
- PublicCaption nvarchar(max),RenditionDate nvarchar(19), Technique nvarchar(255), RenditionNumber nvarchar(64)) 
+ PublicCaption nvarchar(max),RenditionDate nvarchar(19), Technique nvarchar(255), RenditionNumber nvarchar(64) ) 
 	-- SET NOCOUNT ON added to prevent extra result sets from
 	-- interfering with SELECT statements.
 	SET NOCOUNT ON;
@@ -38,7 +47,7 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
 	tes.TextEntryHTML, tel.TextEntryHTML, tev.TextEntryHTML, tep.TextEntryHTML, teei.TextEntryHTML, tepiat.TextEntryHTML, 
 	teat.TextEntryHTML, teast.TextEntryHTML, l.site, l.Room, l.UnitType, l.LocationString, mf.FileName , mm.MediaView, mm.Description, mm.PublicAccess,
 	x.PrimaryDisplay, conxref1.DisplayName, conxref1.Role, mm.PublicCaption, mr.RenditionDate, mr.Technique, mr.RenditionNumber
-	from Objects O 
+	from Objects O
 	/** Object Titles */
 	INNER JOIN (
 	SELECT Title, ObjectID 
@@ -55,7 +64,7 @@ create table #tempImage(ObjectID int, ObjectNumber nvarchar(64), Title nvarchar(
 	INNER JOIN ObjRights obr ON obr.OBJECTID = O.ObjectID
 	INNER JOIN ObjRightsTypes Ort on Ort.ObjRightsTypeID = Obr.ObjRightsTypeID
 	/*text Entries - short description, long description, visual description, published provenance,
-	EnsembleIndex, PrimaryImageAltTxt and AudioTour, Published Archives Reference */
+	EnsembleIndex, PrimaryImageAltTxt and AudioTour */
 	LEFT OUTER JOIN TextEntries tes on tes.id = O.ObjectID and tes.Texttypeid = 48
 	LEFT OUTER JOIN TextEntries tel on tel.id = O.ObjectID and tel.Texttypeid = 49
 	LEFT OUTER JOIN TextEntries tev on tev.id = O.ObjectID and tev.Texttypeid = 50
@@ -94,8 +103,9 @@ join (select const.DisplayName,r.Role, cx.ID,cx.RoleTypeID,cx.RoleID  from ConXr
 	
 
 	
+	/*INNER JOIN MediaXRefs mx On mx.ID = o.ObjectID And mx.TableID = 108 /*and Mx.PrimaryDisplay = 1*/
 	/* Photographer */	
-INNER JOIN MediaMaster mm On Mx.MediaMasterID = mm.MediaMasterID 
+    INNER JOIN MediaMaster mm On Mx.MediaMasterID = mm.MediaMasterID 
 INNER JOIN MediaRenditions mr ON mm.MediaMasterID = mr.MediaMasterID
 INNER JOIN ConXrefs cx ON  mr.RenditionID = cx.ID and cx.RoleTypeID = 11 and cx.RoleID = 11
 INNER JOIN MediaFiles mf ON mr.PrimaryFileID = mf.FileID
@@ -104,6 +114,7 @@ INNER JOIN ConXrefDetails cxd ON cx.ConXrefID = cxd.ConXrefID and cxd.UnMasked =
 INNER JOIN ConAltNames cn ON cxd.NameID = cn.AltNameId
 INNER JOIN Constituents cts ON cn.ConstituentID = cts.ConstituentID and cts.Active = 1 
 	 WHERE O.ObjectID = @ObjectID */
+	 /* Select * from #tempImage */
 
 	DECLARE	@return_value nvarchar(max)
 
@@ -144,6 +155,7 @@ INNER JOIN Constituents cts ON cn.ConstituentID = cts.ConstituentID and cts.Acti
 		+ COALESCE('"primaryImageAltText":"' + dbo.fn_String_Escape(replace(replace(PrimaryImageAltText, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
 		+ COALESCE('"audioTour":"' + dbo.fn_String_Escape(replace(replace(AudioTour, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
         + COALESCE('"publishedArchivesReference":"' + dbo.fn_String_Escape(replace(replace(PublicArchivesReference, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
+
 		+ COALESCE('"mediaName":"' + MediaFile + '",','')
 		+ COALESCE('"mediaView":"' + MediaView + '",','')
 		+ COALESCE('"mediaDescription":"' + dbo.fn_String_Escape(replace(replace(MediaDescription, '\' , '\\'), CHAR(13)+CHAR(10), '\n'), 'json') + '",','')
@@ -163,14 +175,19 @@ INNER JOIN Constituents cts ON cn.ConstituentID = cts.ConstituentID and cts.Acti
     + ']' + '}' 
 	 );
 
+	 --select @return_value 
+
 	 create table #tempvar(jsonvalue nvarchar(max));
 
 	 insert into #tempvar select @return_value
 
+	  /* select * from #tempvar */
+	  
 	 /*Delete Existing rows with TextTypeID 67 */
 	 delete from tms.dbo.TextEntries where TextTypeID = 67 and ID = @ObjectID
 
 	 /*Insert into Textentries */
+
 	 insert into TextEntries (TableID, ID, TextTypeID, TextStatusID, LoginID, EnteredDate, TextEntryHTML, TextEntry)
 	 values (108, @ObjectID, 67, 0, 'dnune', GetDate(), @return_value, @return_value)
 	 End
