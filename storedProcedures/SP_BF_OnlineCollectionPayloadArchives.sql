@@ -1,15 +1,26 @@
 USE [TMS]
 GO
-	/****** Object:  StoredProcedure [dbo].[SP_BF_OnlineCollectionPayload]    Script Date: 12/19/2022 9:00:56 PM ******/
-SET
-	ANSI_NULLS ON
+/****** Object:  StoredProcedure [dbo].[SP_BF_OnlineCollectionPayloadArchives]    Script Date: 12/26/2023 10:50:40 AM ******/
+SET ANSI_NULLS ON
 GO
-SET
-	QUOTED_IDENTIFIER ON
+SET QUOTED_IDENTIFIER ON
 GO
-	ALTER PROCEDURE [dbo].[SP_BF_OnlineCollectionPayloadArchives] @ObjectID nvarchar(max) AS BEGIN;
+-- =============================================
+-- Author:		<Author,,Name>
+-- Create date: <Create Date,,>
+-- Description:	<Description,,>
+-- =============================================
+ALTER PROCEDURE [dbo].[SP_BF_OnlineCollectionPayloadArchives]
+	-- Add the parameters for the stored procedure here
+	@ObjectID NVARCHAR(max)
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
 
--- Creates our `tempObjects` table
+    -- Insert statements for procedure here
+	-- Creates our `tempObjects` table
 CREATE TABLE #tempObjects(
 ObjectID int,
 ObjectNumber nvarchar(64),
@@ -17,13 +28,6 @@ Title nvarchar(450),
 Dated nvarchar(255),
 Description nvarchar(max)
 );
-
-/**
- * SET NOCOUNT ON added to prevent extra result sets FROM
- * interfering with SELECT statements.
- */
-SET
-	NOCOUNT ON;
 
 INSERT INTO
 	#tempObjects	
@@ -77,3 +81,5 @@ SET
 	 /*Insert into Textentries */    
 	 INSERT INTO TextEntries (TableID, ID, TextTypeID, TextStatusID, LoginID, EnteredDate, TextEntryHTML, TextEntry)
 	 VALUES (108, @ObjectID, 67, 0, 'dnune', GetDate(), @return_value, @return_value)
+
+END
